@@ -127,8 +127,7 @@ fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  tests/Makefile
-                 doxygen.config
-                 pkgconfig-template.pc])
+                 doxygen.config])
 AC_CONFIG_FILES([tests/test-wrapper.sh],
                 [chmod +x tests/test-wrapper.sh])
 
