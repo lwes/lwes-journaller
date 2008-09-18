@@ -1,0 +1,13 @@
+*.bb
+*.bbg
+*.da
+*.gcov
+*.gcno
+*.la
+*.lo
+.deps
+.libs
+Makefile
+Makefile.in
+test-wrapper.sh
+testwrapper-*
