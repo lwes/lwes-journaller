@@ -71,6 +71,10 @@ AC_CHECK_LIB(nsl,main)
 AC_CHECK_LIB(xnet,main)
 AC_CHECK_LIB(resolv,main)
 
+dnl syslog check
+AC_CHECK_FUNCS(syslog)
+AC_CHECK_LIB(syslog,main)
+
 dnl allow for an external gettimeofday function, mostly useful for people have
 dnl reimplemented gettimeofday because the system call is slow (FreeBSD 4.11)
 AC_ARG_ENABLE(external-gettimeofday,
@@ -79,6 +83,31 @@ AC_ARG_ENABLE(external-gettimeofday,
                AC_DEFINE_UNQUOTED([EXTERNAL_GETTIMEOFDAY_HEADER], "$enable_external_gettimeofday", [Header for external gettime of day])
                ],
               AC_MSG_WARN(using system gettimeofday))
+
+dnl  -- determine the type of varargs this platform supports --
+# check for flavours of varargs macros
+AC_MSG_CHECKING(for ISO C99 varargs macros in C)
+AC_TRY_COMPILE([],[
+int a(int p1, int p2, int p3);
+#define call_a(...) a(1,__VA_ARGS__)
+call_a(2,3);
+],g_have_iso_c_varargs=yes,g_have_iso_c_varargs=no)
+AC_MSG_RESULT($g_have_iso_c_varargs)
+if test "x$g_have_iso_c_varargs" = "xyes" ; then
+  AC_DEFINE(HAVE_ISO_C_VARARGS, 1, [ISO C varargs])
+fi
+
+AC_MSG_CHECKING(for GNUC varargs macros)
+AC_TRY_COMPILE([],[
+int a(int p1, int p2, int p3);
+#define call_a(params...) a(1,params)
+call_a(2,3);
+],g_have_gnuc_varargs=yes,g_have_gnuc_varargs=no)
+AC_MSG_RESULT($g_have_gnuc_varargs)
+if test "x$g_have_gnuc_varargs" = "xyes" ; then
+  AC_DEFINE(HAVE_GNUC_C_VARARGS, 1, [GNUC varargs])
+fi
+
 
 # --- Coverage hooks ---
 

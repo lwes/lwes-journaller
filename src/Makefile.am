@@ -16,51 +16,25 @@ mycleanfiles =
 
 mymaintainercleanfiles = config.h.in
 
-# list of public library header files
+# list of source files comprising program
 
-myheaderfiles =
+mysourcefiles = log.c \
+                lwes-journaller.c
 
-# list of private library header files
-# these aren't installed or listed in the library common header
+bin_PROGRAMS = \
+  lwes-journaller
 
-myprivateheaderfiles =
-
-# include a top level header which includes all other headers
-# if set, MUST be of the form @PACKAGEPACKED@.h
-
-mybaseincludeheader =
-
-# list of source files comprising shared library
-
-mysourcefiles =
+lwes_journaller_SOURCES = ${mysourcefiles}
 
 # END: Variables to change
 # past here, hopefully, there is no need to edit anything
 
 INCLUDES = ${myincludes}
 
-baseincludedir = $(includedir)/@PACKAGE_NAME@-@MAJOR_VERSION@
-baseinclude_HEADERS = ${mybaseincludeheader}
-
-@PACKAGEPACKED@.h: Makefile
-        @(echo "/* Automatically generated common header file */";     \
-          echo "";                                                     \
-          perl -le                                                     \
-            'foreach (@ARGV) { print "#include <@PACKAGE_NAME@-@PACKAGE_VERSION@/$$_>"; }'\
-          ${myheaderfiles}) > @PACKAGEPACKED@.h
-
-betterincludedir = $(baseincludedir)/@PACKAGE_NAME@-@PACKAGE_VERSION@
-
-betterinclude_HEADERS = ${myheaderfiles}
-
-noinst_HEADERS = ${myprivateheaderfiles}
-
 EXTRA_DIST =                            \
-  ${myprivateheaderfiles}               \
   ${myextradist}
 
 CLEANFILES =                            \
-  @PACKAGEPACKED@.h                     \
   *.bb                                  \
   *.bbg                                 \
   *.da                                  \
