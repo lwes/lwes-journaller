@@ -20,53 +20,56 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
+#include "rename_journal.h"
+
 #include "log.h"
-#include "opt.h"
+#include "sig.h"
+#include "perror.h"
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
-  char buf[1024];
-  va_list ap;
-  static int pid = -1;
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+#include <time.h>
 
-  fprintf(stdout, buf);
-  if(level <= 0)
-  {
-    printf ("logging level <= 0\n");
-    return;
+int rename_journal(const char* path, time_t* last_rotate)
+{
+  char* ext;
+  char base[PATH_MAX];
+  char newpath[PATH_MAX];
+  char timebfr[100];		/* Needs to be big enough for strftime below */
+  time_t now = time(NULL);	/* get current time */
+  struct tm tm_now;
+
+#ifndef WIN32 //TODO: someday figure out localtime_r() on WIN32, but not needed now
+	if ( strftime(timebfr, sizeof(timebfr), "%Y%m%d%H%M%S", localtime_r(&now, &tm_now)) == 0 ) {
+    LOG_ER("strftime failed in rename_journal(\"%s\", ...)\n", path);
+    return -1;
+  }
+#endif
+
+  if ( 0 != (ext = strrchr(path, '.')) ) {
+    strncpy(base, path, ext - path);
+    base[ext - path] = '\0';
+  } else {
+    strcpy(base, path);
+    ext = "";
   }
 
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
+	if ( ! gbl_rotate ) // sink-ram rotate ?
+		ext = "" ;
+
+  snprintf(newpath, sizeof(newpath), "%s.%s.%ld.%ld%s", base, timebfr, *last_rotate, now, ext);
+  *last_rotate = now;
+
+	if ( gbl_rotate )
+		LOG_INF("Naming new journal file \"%s\".\n", newpath);
+
+	if ( rename(path, newpath) < 0 ) {
+		char buf[100] ;
+		LOG_ER("rename: %s: - '%s' -> '%s'\n", strerror_r(errno,buf,sizeof(buf)), path, newpath);
+    return -1;
   }
 
-  va_start(ap, format);
-  vsnprintf(buf, sizeof(buf), format, ap);
-  va_end(ap);
-
+  return 0;
 }
-
-void log_get_level_string(char* str, int len) {
-  *str = '\0';
-
-  if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
-
-  if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
-
-  if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
-
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
-
-  str[len - 1] = '\0';
-}
-

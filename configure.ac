@@ -51,6 +51,32 @@ AC_CHECK_HEADER(valgrind/valgrind.h,
                           [1],
                           [Define to 1 if the <valgrind/valgrind.h> header is on the system]))
 
+dnl Check for LWES installed
+PKG_CHECK_MODULES([LWES], [lwes-0 >= 0.22.0])
+AC_SUBST(LWES_CFLAGS)
+AC_SUBST(LWES_LIBS)
+
+dnl Check for messaging
+AC_MSG_CHECKING(for sys/msg support)
+AC_TRY_COMPILE([
+                #include <sys/msg.h>
+                ],[ ],g_have_sys_msg=yes,g_have_sys_msg=no)
+AC_MSG_RESULT($g_have_sys_msg)
+if test "x$g_have_sys_msg" = "xyes" ; then
+  AC_DEFINE(HAVE_SYS_MSG_H, 1, [System supports sys/msg.h])
+fi
+if test "x$g_have_sys_msg" = "x"; then
+  AC_MSG_CHECKING(for mqueue support)
+  AC_TRY_COMPILE([
+                  #include <mqueue.h>
+                  ],[ ],g_have_mqueue=yes,g_have_mqueue=no)
+  AC_MSG_RESULT($g_have_mqueue)
+  if test "x$g_have_mqueue" = "xyes" ; then
+    AC_DEFINE(HAVE_MQUEUE_H, 1, [System supports mqueue.h])
+  fi
+fi
+
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_MODE_T

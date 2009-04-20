@@ -1,2 +1,25 @@
-This is the LWES journaller package.
+h1. LWES Journaller
+
+h2. Summary
+  The journaller listens on the given multicast ip and port and writes all
+events caught to a file which can be processed later.
+
+
+h2. Build Instructions
+
+h3. Requirements
+   * popt -- for command line argument processing
+   * libltdl -- for dlopen
+   * sys/msg or mqueue messaging
+   * lwes core
+
+h3. Build
+{quote}
+% ./configure --disable-hardcore
+% make
+{quote}
+
+h2. Usage
+{quote}
+{quote}
 

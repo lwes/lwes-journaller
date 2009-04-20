@@ -18,55 +18,50 @@
  * Boston, MA 02110-1301 USA.                                           *
  *======================================================================*/
 
-#include "config.h"
+#ifndef QUEUE_DOT_H
+#define QUEUE_DOT_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
-#include "log.h"
-#include "opt.h"
+#include <stddef.h>
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
-  char buf[1024];
-  va_list ap;
-  static int pid = -1;
+/* Queue methods:
+ *
+ * open() -- opens a queue, return 0 on success, -1 on error
+ *
+ * close() -- closes a queue, return 0 on success, -1 on error
+ *
+ * read() -- reads "count" bytes from a queue into "buf", return the
+ * number of bytes read on success, -1 on error
+ *
+ * write() -- writes "count" bytes from "buf" to a queue, return the
+ * number of bytes written on success, -1 on error
+ *
+ * alloc() -- return a buffer suitable for use with read and write
+ *
+ * dealloc() -- free a buffer returned by alloc().
+ *
+ */
 
-  fprintf(stdout, buf);
-  if(level <= 0)
-  {
-    printf ("logging level <= 0\n");
-    return;
-  }
+struct queue;
 
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
-  }
+struct queue_vtbl {
+  void  (*destructor)   (struct queue* this_queue);
 
-  va_start(ap, format);
-  vsnprintf(buf, sizeof(buf), format, ap);
-  va_end(ap);
+  int   (*open)         (struct queue* this_queue, int flags);
+  int   (*close)        (struct queue* this_queue);
 
-}
+  int   (*read)         (struct queue* this_queue, void* buf, size_t count, int* pending);
+  int   (*write)        (struct queue* this_queue, const void* buf, size_t count);
 
-void log_get_level_string(char* str, int len) {
-  *str = '\0';
+  void* (*alloc)        (struct queue* this_queue, size_t* newcount);
+  void  (*dealloc)      (struct queue* this_queue, void* buf);
+};
 
-  if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
+struct queue {
+  struct queue_vtbl*	vtbl;
+  void*			priv;
+};
 
-  if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
+int queue_factory(struct queue* this_queue);
+typedef int (*lwes_journaller_queue_init_t)(struct queue*, const char*, size_t, size_t) ;
 
-  if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
-
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
-
-  str[len - 1] = '\0';
-}
-
+#endif /* QUEUE_DOT_H */

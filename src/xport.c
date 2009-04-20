@@ -18,55 +18,24 @@
  * Boston, MA 02110-1301 USA.                                           *
  *======================================================================*/
 
-#include "config.h"
+#include "xport.h"
+#include "xport_udp.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
 #include "log.h"
 #include "opt.h"
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
-  char buf[1024];
-  va_list ap;
-  static int pid = -1;
+#include <string.h>
+#include <stdio.h>
 
-  fprintf(stdout, buf);
-  if(level <= 0)
-  {
-    printf ("logging level <= 0\n");
-    return;
+int xport_factory(struct xport* this_xport)
+{
+  /* Only UDP transport supported. */
+  if ( strcmp(arg_xport, "udp") != 0 ) {
+    LOG_ER("unrecognized transport type \"%s\", try \"upd\"\n",
+           arg_xport);
+    return -1;
   }
 
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
-  }
-
-  va_start(ap, format);
-  vsnprintf(buf, sizeof(buf), format, ap);
-  va_end(ap);
-
+  /* Since we currently have only one xport type: */
+  return xport_udp_ctor(this_xport, arg_ip, arg_interface, arg_port, arg_join_group);
 }
-
-void log_get_level_string(char* str, int len) {
-  *str = '\0';
-
-  if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
-
-  if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
-
-  if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
-
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
-
-  str[len - 1] = '\0';
-}
-

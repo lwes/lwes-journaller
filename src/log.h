@@ -41,6 +41,16 @@
 #define LOG_DEBUG       7       /* debug-level messages */
 #endif
 
+enum {
+    off, error, warning, info, progress
+};
+
+#define LOG_MASK_OFF            (1<<off)
+#define LOG_MASK_ERROR          (1<<error)
+#define LOG_MASK_WARNING        (1<<warning)
+#define LOG_MASK_INFO           (1<<info)
+#define LOG_MASK_PROGRESS       (1<<progress)
+
 /*! \file log.h
  *  \brief Functions for logging within the journaller
  */
@@ -55,31 +65,21 @@
  *  \param[in] lineno the line number of the file logging this message
  *  \param[in] format the format of the message
  */ 
-void log_msg(int level, const char *fname, const int lineno, 
-             const char* format, ...);
+void log_msg(int level, char *fname, int lineno, const char* format, ...);
+void log_get_level_string(char* str, int len);
 
-#if defined(HAVE_GNUC_C_VARARGS)
-#define LOG_MSG_EMERG(args,...)   log_msg(LOG_EMERG, __FILE__, __LINE__, args)
-#define LOG_MSG_ALERT(args,...)   log_msg(LOG_ALERT, __FILE__,__LINE__, args)
-#define LOG_MSG_CRIT(args,...)    log_msg(LOG_CRIT, __FILE__, __LINE__, args)
-#define LOG_MSG_ERR(args,...)     log_msg(LOG_ERR, __FILE__, __LINE__, args)
-#define LOG_MSG_WARNING(args,...) log_msg(LOG_WARNING, __FILE__, __LINE__, args)
-#define LOG_MSG_NOTICE(args,...)  log_msg(LOG_NOTICE, __FILE__, __LINE__, args)
-#define LOG_MSG_INFO(args,...)    log_msg(LOG_INFO, __FILE__, __LINE__, args)
-#define LOG_MSG_DEBUG(args,...)   log_msg(LOG_DEBUG, __FILE__, __LINE__, args)
-#elif defined(HAVE_ISO_C_VARARGS)
-#define LOG_MSG_EMERG(...)   log_msg(LOG_EMERG, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_ALERT(...)   log_msg(LOG_ALERT, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_CRIT(...)    log_msg(LOG_CRIT, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_ERR(...)     log_msg(LOG_ERR, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_WARNING(...) log_msg(LOG_WARNING, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_NOTICE(...)  log_msg(LOG_NOTICE, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_INFO(...)    log_msg(LOG_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_MSG_DEBUG(...)   log_msg(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
-
+#if defined(HAVE_GCC_MACRO_VARARGS) || defined(HAVE_GNUC_C_VARARGS)
+#define LOG_ER(args...)       log_msg(LOG_MASK_ERROR,    __FILE__, __LINE__, args)
+#define LOG_WARN(args...)     log_msg(LOG_MASK_WARNING,  __FILE__, __LINE__, args)
+#define LOG_INF(args...)      log_msg(LOG_MASK_INFO,     __FILE__, __LINE__, args)
+#define LOG_PROG(args...)     log_msg(LOG_MASK_PROGRESS, __FILE__, __LINE__, args)
+#elif defined(HAVE_ISO_MACRO_VARARGS) || defined(HAVE_ISO_C_VARARGS)
+#define LOG_ER(...)           log_msg(LOG_MASK_ERROR,    __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_WARN(...)         log_msg(LOG_MASK_WARNING,  __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_INF(...)          log_msg(LOG_MASK_INFO,     __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_PROG(...)         log_msg(LOG_MASK_PROGRESS, __FILE__, __LINE__, __VA_ARGS__)
 #else
 #error You must have some type (either ISO-C99 or GCC style) of variable argument list for macros.
 #endif
 
 #endif
-

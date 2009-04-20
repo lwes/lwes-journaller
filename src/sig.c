@@ -20,53 +20,73 @@
 
 #include "config.h"
 
+#include "sig.h"
+
+#include "log.h"
+#include "perror.h"
+
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
-#include "log.h"
-#include "opt.h"
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
-  char buf[1024];
-  va_list ap;
-  static int pid = -1;
+volatile int gbl_done = 0;
+volatile int gbl_rotate = 0;
+volatile PANIC_MODE journaller_panic_mode = PANIC_NOT ;
 
-  fprintf(stdout, buf);
-  if(level <= 0)
-  {
-    printf ("logging level <= 0\n");
-    return;
-  }
-
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
-  }
-
-  va_start(ap, format);
-  vsnprintf(buf, sizeof(buf), format, ap);
-  va_end(ap);
-
+static void terminate_signal_handler(int signo)
+{
+  gbl_done = signo;
 }
 
-void log_get_level_string(char* str, int len) {
-  *str = '\0';
-
-  if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
-
-  if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
-
-  if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
-
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
-
-  str[len - 1] = '\0';
+static void rotate_signal_handler(int signo)
+{
+  gbl_rotate = 1;
 }
 
+static void install(int signo, void (*handler)(int signo))
+{
+  struct sigaction sigact;
+
+  memset(&sigact, 0, sizeof(sigact));
+
+  sigact.sa_handler = handler;
+
+  sigemptyset(&sigact.sa_mask);
+  sigact.sa_flags = 0;
+
+  if ( sigaction(signo, &sigact, NULL) < 0 ) {
+    PERROR("sigaction");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void install_signal_handlers()
+{
+  struct sigaction sigact;
+
+  /* Any of these signals shuts us down. */
+  LOG_PROG("Installing termination signal handlers.\n");
+
+  install(SIGINT, terminate_signal_handler);
+  install(SIGQUIT, terminate_signal_handler);
+  install(SIGTERM, terminate_signal_handler);
+
+  memset(&sigact, 0, sizeof(sigact));
+  sigact.sa_handler = SIG_IGN;
+
+  sigemptyset(&sigact.sa_mask);
+  sigact.sa_flags = 0;
+
+  if ( sigaction(SIGPIPE, &sigact, NULL) < 0 ) {
+    PERROR("sigaction");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void install_rotate_signal_handlers()
+{
+  /* This one triggers a log rotate. */
+  LOG_PROG("Installing rotate signal handlers.\n");
+
+  install(SIGHUP, rotate_signal_handler);
+}

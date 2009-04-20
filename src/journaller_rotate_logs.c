@@ -17,56 +17,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor,                   *
  * Boston, MA 02110-1301 USA.                                           *
  *======================================================================*/
-
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
+#include "header.h"
 #include "log.h"
 #include "opt.h"
+#include "perror.h"
+#include "xport.h"
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
-  char buf[1024];
-  va_list ap;
-  static int pid = -1;
+#include <fcntl.h>
+#include <stdlib.h>
 
-  fprintf(stdout, buf);
-  if(level <= 0)
-  {
-    printf ("logging level <= 0\n");
-    return;
+int main(int argc, const char* argv[])
+{
+  int xpt_write_ret;
+  struct xport xpt;
+  const char rotate_event[] = ROTATE_COMMAND "\0";
+
+  process_options(argc, argv);
+	arg_ttl = 3 ; // Command::Rotate should not be any other ...
+
+  if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) ) {
+    LOG_ER("Failed to create xport object.\n");
+    exit(EXIT_FAILURE);
   }
 
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
-  }
+  int idx;
+	for ( idx=0; idx<3; idx++ ){
+		if ( (xpt_write_ret = xpt.vtbl->write(&xpt,
+						rotate_event, sizeof(rotate_event))) < 0 ) {
+			LOG_ER("Xport Command::Rotate write error.");
+			xpt.vtbl->destructor(&xpt);
+			exit(EXIT_FAILURE);
+		}
+		sleep(1) ;
+	}
 
-  va_start(ap, format);
-  vsnprintf(buf, sizeof(buf), format, ap);
-  va_end(ap);
+  xpt.vtbl->destructor(&xpt);
 
+  return 0;
 }
-
-void log_get_level_string(char* str, int len) {
-  *str = '\0';
-
-  if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
-
-  if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
-
-  if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
-
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
-
-  str[len - 1] = '\0';
-}
-

@@ -18,55 +18,47 @@
  * Boston, MA 02110-1301 USA.                                           *
  *======================================================================*/
 
-#include "config.h"
+#ifndef STATS_DOT_H
+#define STATS_DOT_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
-#include "log.h"
-#include "opt.h"
+#include <time.h>
+#include "header.h"
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
-  char buf[1024];
-  va_list ap;
-  static int pid = -1;
+struct stats {
+  long long loss;
 
-  fprintf(stdout, buf);
-  if(level <= 0)
-  {
-    printf ("logging level <= 0\n");
-    return;
-  }
+  long long bytes_total;
+  long long bytes_since_last_rotate;
 
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
-  }
+  long long packets_total;
+  long long packets_since_last_rotate;
 
-  va_start(ap, format);
-  vsnprintf(buf, sizeof(buf), format, ap);
-  va_end(ap);
+  long long bytes_in_burst;
+  long long packets_in_burst;
 
-}
+  int hiq;			/* Peak packet count in queue. */
 
-void log_get_level_string(char* str, int len) {
-  *str = '\0';
+  time_t hiq_start;		/* When this burst started. */
+  time_t hiq_last;		/* When the previous burst started. */
 
-  if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
+  int hiq_since_last_rotate;	/* Highest high water mark since last rotate. */
 
-  if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
+  long long bytes_in_burst_since_last_rotate;
+  long long packets_in_burst_since_last_rotate;
 
-  if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
+  time_t start_time;
+  time_t last_rotate;
+  
+  struct event_header latest_rotate_header ; /* Of the Command::Rotate that was acted on */
 
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
+	long hurryup_discards[3] ;
+};
 
-  str[len - 1] = '\0';
-}
+int stats_ctor(struct stats* this_stats);
+void stats_record(struct stats* this_stats, int bytes, int pending);
+void stats_rotate(struct stats* this_stats);
+void stats_record_loss(struct stats* this_stats);
+void stats_report(struct stats* this_stats);
+extern struct stats st ;
 
+#endif /* STATS_DOT_H */

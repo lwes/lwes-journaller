@@ -50,21 +50,21 @@ VALGRIND_LEAK_OPTS = --tool=memcheck \
                      ${myextravalgrindleakopts}
 
 memcheck: $(check_PROGRAMS)
-        @for x in $(check_PROGRAMS);                                     \
+	@for x in $(check_PROGRAMS);                                     \
           do                                                             \
             $(MAKE) memcheck-$$x;                                        \
           done
 
 leakcheck: $(check_PROGRAMS)
-        @for x in $(check_PROGRAMS);                                     \
+	@for x in $(check_PROGRAMS);                                     \
           do                                                             \
             $(MAKE) leakcheck-$$x;                                       \
           done
 
 memcheck-%: %
-        @echo "*****************************************";                \
-        echo "MEMCHECK: $<";                                             \
-        echo "ARGS: ${VALGRIND_OPTS} ${VALGRIND_MEM_OPTS} ${$<_VALGRIND_MEM_OPTS}";\
+	@echo "*****************************************";                \
+	echo "MEMCHECK: $<";                                             \
+	echo "ARGS: ${VALGRIND_OPTS} ${VALGRIND_MEM_OPTS} ${$<_VALGRIND_MEM_OPTS}";\
         $(LIBTOOL) --mode=execute                                        \
           valgrind                                                       \
             ${VALGRIND_OPTS}                                             \
@@ -72,10 +72,10 @@ memcheck-%: %
             ${$<_VALGRIND_MEM_OPTS} ./$<
 
 leakcheck-%: %
-        @echo "*****************************************";               \
-        echo "LEAKCHECK: $<";                                           \
-        echo "ARGS: ${VALGRIND_OPTS} ${VALGRIND_LEAK_OPTS} ${$<_VALGRIND_LEAK_OPTS}";                                           \
-        $(LIBTOOL) --mode=execute                                       \
+	@echo "*****************************************";               \
+	echo "LEAKCHECK: $<";                                           \
+	echo "ARGS: ${VALGRIND_OPTS} ${VALGRIND_LEAK_OPTS} ${$<_VALGRIND_LEAK_OPTS}";                                           \
+	$(LIBTOOL) --mode=execute                                       \
           valgrind                                                      \
             ${VALGRIND_OPTS}                                            \
             ${VALGRIND_LEAK_OPTS}                                       \
@@ -86,27 +86,27 @@ leakcheck-%: %
 TESTS = $(patsubst %, testwrapper-%, ${mytests}) ${myscripttests}
 
 testwrapper-%: % test-wrapper.sh test-wrapper.sh.in
-        @ln -sf test-wrapper.sh $@
-        @chmod +x test-wrapper.sh
+	@ln -sf test-wrapper.sh $@
+	@chmod +x test-wrapper.sh
 
 EXTRA_DIST =                            \
-    ${myextradist}
+	${myextradist}
 
 CLEANFILES =                            \
-    testwrapper-*                       \
-    *.bb                                \
-    *.bbg                               \
-    *.da                                \
-    *.gcno                              \
-    *.gcda                              \
-    *.gcov                              \
-    test-wrapper.sh                     \
-    ${mycleanfiles}
+	testwrapper-*                       \
+	*.bb                                \
+	*.bbg                               \
+	*.da                                \
+	*.gcno                              \
+	*.gcda                              \
+	*.gcov                              \
+	test-wrapper.sh                     \
+	${mycleanfiles}
 
 MAINTAINERCLEANFILES =                  \
-    Makefile.in                         \
-    skeletor-tests.am                   \
-    ${mymaintainercleanfiles}
+	Makefile.in                         \
+	skeletor-tests.am                   \
+	${mymaintainercleanfiles}
 
 # Tell make to ignore these any files that match these targets.
 .PHONY: memcheck leakcheck
