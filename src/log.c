@@ -31,25 +31,18 @@
 void log_msg(int level, char* fname, int lineno, const char* format, ...) {
   char buf[1024];
   va_list ap;
-  static int pid = -1;
 
-  fprintf(stdout, buf);
   if(level <= 0)
   {
     printf ("logging level <= 0\n");
     return;
   }
 
-  /* determine our PID */
-  if( pid == -1 )
-  {
-    pid = getpid();
-  }
-
   va_start(ap, format);
   vsnprintf(buf, sizeof(buf), format, ap);
   va_end(ap);
 
+  fprintf(stdout, buf);
 }
 
 void log_get_level_string(char* str, int len) {

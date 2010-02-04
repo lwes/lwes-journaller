@@ -155,6 +155,12 @@ void process_options(int argc, const char* argv[])
   int bad_options = 0;
   int rc;
 
+#if HAVE_LIBGEN_H
+  arg_basename = basename((char*)argv[0]);
+#else
+  arg_basename = (char*)argv[0];
+#endif
+
   poptContext optCon = poptGetContext(NULL, argc, argv, options, 0);
   poptSetOtherOptionHelp(optCon, "");
 
@@ -180,7 +186,7 @@ void process_options(int argc, const char* argv[])
   }
 
   if ( bad_options )
-    exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE);
 
   /* Count the journals specified on the command line. */
   if ( arg_journalls ) {
@@ -263,12 +269,6 @@ void process_options(int argc, const char* argv[])
 
     exit(EXIT_SUCCESS);
   }
-
-#if HAVE_LIBGEN_H
-  arg_basename = basename((char*)argv[0]);
-#else
-  arg_basename = (char*)argv[0];
-#endif
 
   if ( arg_args ) {
     char log_level_string[100];
