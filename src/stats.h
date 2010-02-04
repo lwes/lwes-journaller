@@ -36,29 +36,29 @@ struct stats {
   long long bytes_in_burst;
   long long packets_in_burst;
 
-  int hiq;			/* Peak packet count in queue. */
+  int hiq;                      /* Peak packet count in queue. */
 
-  time_t hiq_start;		/* When this burst started. */
-  time_t hiq_last;		/* When the previous burst started. */
+  time_t hiq_start;             /* When this burst started. */
+  time_t hiq_last;              /* When the previous burst started. */
 
-  int hiq_since_last_rotate;	/* Highest high water mark since last rotate. */
+  int hiq_since_last_rotate;    /* Highest high water mark since last rotate. */
 
   long long bytes_in_burst_since_last_rotate;
   long long packets_in_burst_since_last_rotate;
 
   time_t start_time;
   time_t last_rotate;
-  
+
   struct event_header latest_rotate_header ; /* Of the Command::Rotate that was acted on */
 
-	long hurryup_discards[3] ;
+  long hurryup_discards[3] ;
 };
 
-int stats_ctor(struct stats* this_stats);
-void stats_record(struct stats* this_stats, int bytes, int pending);
-void stats_rotate(struct stats* this_stats);
-void stats_record_loss(struct stats* this_stats);
-void stats_report(struct stats* this_stats);
+int stats_ctor (struct stats* this_stats);
+void stats_record (struct stats* this_stats, int bytes, int pending);
+void stats_rotate (struct stats* this_stats);
+void stats_record_loss (struct stats* this_stats);
+void stats_report (struct stats* this_stats);
 extern struct stats st ;
 
 #endif /* STATS_DOT_H */

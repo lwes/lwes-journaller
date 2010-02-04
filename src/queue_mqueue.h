@@ -21,9 +21,9 @@
 #ifndef QUEUE_MQUEUE_DOT_H
 #define QUEUE_MQUEUE_DOT_H
 
-int queue_mqueue_ctor(struct queue* this_queue,
-		      const char*   path,
-		      size_t        max_sz,
-		      size_t        max_cnt);
+int queue_mqueue_ctor (struct queue* this_queue,
+                       const char*   path,
+                       size_t        max_sz,
+                       size_t        max_cnt);
 
 #endif /* QUEUE_MQUEUE_DOT_H */

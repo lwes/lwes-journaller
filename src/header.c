@@ -40,36 +40,39 @@ void header_add(void* buf, int count, unsigned long addr, unsigned short port)
   unsigned long long tm;
 
   if ( -1 == gettimeofday(&t, 0) ) /* This is where we need to */
-    PERROR("gettimeofday");	/*  timestamp the packet. */
+    PERROR("gettimeofday"); /*  timestamp the packet. */
 
   tm = ((((long long)t.tv_sec) * 1000LL) + (long long)(t.tv_usec/1000));
 
-  marshal_short(cp, count);	   /* Size of message body. */
-  marshal_ulong_long(cp, tm);	 /* Now in msec. */
-  marshal_long(cp, addr);	     /* Sender IP address. */
-  marshal_short(cp, port);	   /* Sender port number. */
+  marshal_short(cp, count);    /* Size of message body. */
+  marshal_ulong_long(cp, tm);  /* Now in msec. */
+  marshal_long(cp, addr);      /* Sender IP address. */
+  marshal_short(cp, port);     /* Sender port number. */
   marshal_short(cp, arg_site); /* Site ID number */
-  //TODO: should be perfectly alright, but un-QA'd  marshal_long(cp, 0);	       /* reserved */
+  /* TODO: should be perfectly alright, but un-QA'd  marshal_long(cp, 0); */
+  /* reserved */
 }
 
 int header_is_rotate (void* buf, time_t* when)
 {
   if ( toknam_eq((unsigned char *)buf + HEADER_LENGTH,
-                 (unsigned char *)ROTATE_COMMAND) ) {
-    unsigned long long tm;
-    unsigned char* cp = (unsigned char*)buf + 2 ;
-    LOG_PROG("Command::Rotate message received.\n");
-    unmarshal_ulong_long(cp, tm);
-    *when = (time_t)(tm / 1000LL);
-    return 1;
-  }
+                 (unsigned char *)ROTATE_COMMAND) )
+    {
+      unsigned long long tm;
+      unsigned char* cp = (unsigned char*)buf + 2 ;
+      LOG_PROG("Command::Rotate message received.\n");
+      unmarshal_ulong_long(cp, tm);
+      *when = (time_t)(tm / 1000LL);
+      return 1;
+    }
 
   // Ping-Pong ?
   if ( toknam_eq((unsigned char *)buf + HEADER_LENGTH,
-                 (unsigned char *)JOURNALLER_PING_EVENT_TYPE) ) {
-    LOG_PROG("System::Ping message received.\n");
-    return 2;
-  }
+                 (unsigned char *)JOURNALLER_PING_EVENT_TYPE) )
+    {
+      LOG_PROG("System::Ping message received.\n");
+      return 2;
+    }
 
   return 0;
 }
@@ -99,7 +102,8 @@ void header_fingerprint(void* buf, struct packet_check* pc)
 //     character (it's designed to compare large strings efficently)
 //   * we don't care if greater-than or less-than, just equal or not
 //   * syntactically simpler (taking advantage of token's length byte)
-int toknam_eq(const unsigned char* toknam, const unsigned char* nam) {
+int toknam_eq(const unsigned char* toknam, const unsigned char* nam)
+{
   unsigned char len = *nam+1 ;
   while ( *toknam++ == *nam++ )
     if ( --len == 0 )
@@ -108,19 +112,23 @@ int toknam_eq(const unsigned char* toknam, const unsigned char* nam) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-int non_revenue_bearing (const unsigned char* buf) {
-  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_CM_SERVE) ) {
-    st.hurryup_discards[0] += 1 ;
-    return 1 ;
-  }
-  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_DM_SERVE) ) {
-    st.hurryup_discards[1] += 1 ;
-    return 1 ;
-  }
-  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_SS_SERVE) ) {
-    st.hurryup_discards[2] += 1 ;
-    return 1 ;
-  }
+int non_revenue_bearing (const unsigned char* buf)
+{
+  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_CM_SERVE) )
+    {
+      st.hurryup_discards[0] += 1 ;
+      return 1 ;
+    }
+  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_DM_SERVE) )
+    {
+      st.hurryup_discards[1] += 1 ;
+      return 1 ;
+    }
+  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_SS_SERVE) )
+    {
+      st.hurryup_discards[2] += 1 ;
+      return 1 ;
+    }
   return 0 ;
 }
 
@@ -132,7 +140,7 @@ static struct lwes_event_deserialize_tmp *dtmp = NULL;
 #define JOURNALLER_PING_RETURN_PORT_FIELD "ReturnPort"
 #define JOURNALLER_PING_DEFAULT_PORT 64646
 
-  int
+int
 journaller_ping_transport_send_pong (char *address, int port)
 {
   LOG_PROG("Sending System::Pong to %s:%i\n", address, port);
@@ -141,7 +149,9 @@ journaller_ping_transport_send_pong (char *address, int port)
     lwes_event_create( (struct lwes_event_type_db *) NULL,
         (LWES_SHORT_STRING) JOURNALLER_PONG_EVENT_TYPE);
   if ( pong_event == NULL )
-    return 1 ;
+    {
+      return 1 ;
+    }
 
   lwes_emitter_emitto(address, NULL/*arg_interface*/, port, emitter, pong_event);
   lwes_event_destroy(pong_event);
@@ -150,7 +160,7 @@ journaller_ping_transport_send_pong (char *address, int port)
   return 0;
 }
 
-  int
+int
 ping (void* buf, size_t bufsiz)
 {
   unsigned short int return_port ;
@@ -159,59 +169,71 @@ ping (void* buf, size_t bufsiz)
   char* evt = (char*)buf ;
 
   if ( arg_nopong )
-    return 1 ;
+    {
+      return 1 ;
+    }
 
   /* setup System::Pong's transport */
   if ( emitter == NULL )
-    emitter = lwes_emitter_create( (LWES_CONST_SHORT_STRING) arg_ip,
-        (LWES_CONST_SHORT_STRING) NULL, //arg_interface,
-        (LWES_U_INT_32) arg_port, 0, 60 );
+    {
+      emitter = lwes_emitter_create( (LWES_CONST_SHORT_STRING) arg_ip,
+          (LWES_CONST_SHORT_STRING) NULL, //arg_interface,
+          (LWES_U_INT_32) arg_port, 0, 60 );
+    }
   if ( emitter == NULL )
-    return -1 ;
+    {
+      return -1 ;
+    }
 
-  if ( dtmp == NULL ) {
-    dtmp = (struct lwes_event_deserialize_tmp *)
-      malloc(sizeof(struct lwes_event_deserialize_tmp));
-    if(dtmp == NULL)
-      return -1;
-  }
+  if ( dtmp == NULL )
+    {
+      dtmp = (struct lwes_event_deserialize_tmp *)
+        malloc(sizeof(struct lwes_event_deserialize_tmp));
+      if(dtmp == NULL)
+        {
+          return -1;
+        }
+    }
 
   ping_event = lwes_event_create_no_name(NULL);
 
-  if ( ping_event != NULL ) {
-
-    lwes_event_from_bytes(ping_event, 
-        (LWES_BYTE_P)&evt[HEADER_LENGTH], bufsiz-HEADER_LENGTH, 0, dtmp);
-
-    if( lwes_event_get_IP_ADDR(ping_event,
-          JOURNALLER_PING_RETURN_IP_FIELD,
-          &return_ip) != 0 )
+  if ( ping_event != NULL )
     {
-      if ( lwes_event_get_IP_ADDR(ping_event, JOURNALLER_PING_SENDER_IP_FIELD,
-            &return_ip) != 0 ) { // none-of-the-above, so use header's sender-ip
-        char* xxx = (char*)&return_ip ;
-        xxx[0] = evt[13] ;
-        xxx[1] = evt[12] ;
-        xxx[2] = evt[11] ;
-        xxx[3] = evt[10] ;
-      }
+
+      lwes_event_from_bytes (ping_event,
+                             (LWES_BYTE_P)&evt[HEADER_LENGTH],
+                             bufsiz-HEADER_LENGTH, 0, dtmp);
+
+      if( lwes_event_get_IP_ADDR (ping_event,
+                                  JOURNALLER_PING_RETURN_IP_FIELD,
+                                  &return_ip) != 0 )
+        {
+          if ( lwes_event_get_IP_ADDR(ping_event,
+                                      JOURNALLER_PING_SENDER_IP_FIELD,
+                                      &return_ip) != 0 )
+            { // none-of-the-above, so use header's sender-ip
+              char* xxx = (char*)&return_ip ;
+              xxx[0] = evt[13] ;
+              xxx[1] = evt[12] ;
+              xxx[2] = evt[11] ;
+              xxx[3] = evt[10] ;
+            }
+        }
+
+      if( lwes_event_get_U_INT_16(ping_event,
+                                  JOURNALLER_PING_RETURN_PORT_FIELD,
+                                  &return_port) != 0 )
+        {
+          return_port = JOURNALLER_PING_DEFAULT_PORT;
+        }
+
+      lwes_event_get_U_INT_16(ping_event, JOURNALLER_PING_RETURN_PORT_FIELD,
+                              &return_port);
+
+      journaller_ping_transport_send_pong(inet_ntoa(return_ip), return_port);
+      /* cleanup */
+      lwes_event_destroy(ping_event);
     }
-
-    if( lwes_event_get_U_INT_16(ping_event,
-          JOURNALLER_PING_RETURN_PORT_FIELD,
-          &return_port) != 0 )
-    {
-      return_port = JOURNALLER_PING_DEFAULT_PORT;
-    }
-
-    lwes_event_get_U_INT_16(ping_event, JOURNALLER_PING_RETURN_PORT_FIELD,
-        &return_port);
-
-    journaller_ping_transport_send_pong(inet_ntoa(return_ip), return_port);
-    /* cleanup */
-    lwes_event_destroy(ping_event);
-
-  }
 
   /* we're done */
   return 0;

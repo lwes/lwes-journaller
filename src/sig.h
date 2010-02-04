@@ -24,15 +24,15 @@
 extern volatile int gbl_done;
 extern volatile int gbl_rotate;
 typedef enum {
-	PANIC_NOT,							// quiescent
-	PANIC_STARTUP,					// signal to xport_to_queue to start panic
-	PANIC_IN_EFFECT,				// panic mode is in effect
-	PANIC_SHUTDOWN,					// signal to xport_to_queue that panic is done
-	PANIC_HURRYUP						// hurry-up mode is in effect
+    PANIC_NOT,        // quiescent
+    PANIC_STARTUP,    // signal to xport_to_queue to start panic
+    PANIC_IN_EFFECT,  // panic mode is in effect
+    PANIC_SHUTDOWN,   // signal to xport_to_queue that panic is done
+    PANIC_HURRYUP     // hurry-up mode is in effect
 } PANIC_MODE ;
 extern volatile PANIC_MODE journaller_panic_mode ;
 
-void install_signal_handlers();
-void install_rotate_signal_handlers();
+void install_signal_handlers ();
+void install_rotate_signal_handlers ();
 
 #endif /* SIG_DOT_H */

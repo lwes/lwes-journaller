@@ -45,16 +45,16 @@
 struct event_header {
 /* note: datatypes may be wrong (should be big-endian), 
          but are of the correct sizes. */
-  uint16_t payload_length ; /* Size of message body. */
-  uint64_t receipt_time ;	  /* Now in msec. */
-  uint32_t sender_ip ;      /* Sender IP address. */
-  uint16_t sender_port ;    /* Sender port number. */
-  uint16_t site_id ;        /* Site ID number */
+  uint16_t payload_length ;   /* Size of message body. */
+  uint64_t receipt_time ;     /* Now in msec. */
+  uint32_t sender_ip ;        /* Sender IP address. */
+  uint16_t sender_port ;      /* Sender port number. */
+  uint16_t site_id ;          /* Site ID number */
   uint32_t future_extention ; /* reserved */
-	unsigned char event_type[0] ; /* begin of event-type token */
+  unsigned char event_type[0] ; /* begin of event-type token */
 } ;
 #define HEADER_LENGTH (22)
-#define RECEIPT_TIME   (2) 
+#define RECEIPT_TIME   (2)
 
 struct packet_check {
   long long received;
@@ -65,7 +65,7 @@ extern void header_add(void* buf, int count, unsigned long addr, unsigned short 
 extern int  header_is_rotate(void* buf, time_t* when);
 extern void header_fingerprint(void* buf, struct packet_check* pc);
 extern int  toknam_eq(const unsigned char* toknam, const unsigned char* nam) ;
-extern int	non_revenue_bearing (const unsigned char* buf) ;
+extern int  non_revenue_bearing (const unsigned char* buf) ;
 
 /* The character at the beginning of the string is the length byte.
    Strings in events are Pascal style. */

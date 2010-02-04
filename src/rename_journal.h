@@ -23,6 +23,6 @@
 
 #include <time.h>
 
-int rename_journal(const char* path, time_t* last_rotate);
+int rename_journal (const char* path, time_t* last_rotate);
 
 #endif /* RENAME_JOURNAL_DOT_H */

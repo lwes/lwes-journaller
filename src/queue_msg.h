@@ -21,9 +21,9 @@
 #ifndef QUEUE_MSG_DOT_H
 #define QUEUE_MSG_DOT_H
 
-int queue_msg_ctor(struct queue* this_queue,
-		   const char*   path,
-		   size_t        max_sz,
-		   size_t        max_cnt);
+int queue_msg_ctor (struct queue* this_queue,
+                    const char*   path,
+                    size_t        max_sz,
+                    size_t        max_cnt);
 
 #endif /* QUEUE_MSG_DOT_H */

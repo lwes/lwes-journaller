@@ -55,10 +55,11 @@ static void install(int signo, void (*handler)(int signo))
   sigemptyset(&sigact.sa_mask);
   sigact.sa_flags = 0;
 
-  if ( sigaction(signo, &sigact, NULL) < 0 ) {
-    PERROR("sigaction");
-    exit(EXIT_FAILURE);
-  }
+  if ( sigaction(signo, &sigact, NULL) < 0 )
+    {
+      PERROR("sigaction");
+      exit(EXIT_FAILURE);
+    }
 }
 
 void install_signal_handlers()
@@ -78,10 +79,11 @@ void install_signal_handlers()
   sigemptyset(&sigact.sa_mask);
   sigact.sa_flags = 0;
 
-  if ( sigaction(SIGPIPE, &sigact, NULL) < 0 ) {
-    PERROR("sigaction");
-    exit(EXIT_FAILURE);
-  }
+  if ( sigaction(SIGPIPE, &sigact, NULL) < 0 )
+    {
+      PERROR("sigaction");
+      exit(EXIT_FAILURE);
+    }
 }
 
 void install_rotate_signal_handlers()

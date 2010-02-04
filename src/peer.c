@@ -19,7 +19,7 @@
  *======================================================================*/
 #include "peer.h"
 
-void peer_correlate(void* buf, int bufsize)
+void peer_correlate (void* buf, int bufsize)
 {
   (void)buf;     /* appease -Wall -Werror */
   (void)bufsize; /* appease -Wall -Werror */

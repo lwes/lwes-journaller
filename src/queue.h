@@ -57,8 +57,8 @@ struct queue_vtbl {
 };
 
 struct queue {
-  struct queue_vtbl*	vtbl;
-  void*			priv;
+  struct queue_vtbl* vtbl;
+  void*              priv;
 };
 
 int queue_factory(struct queue* this_queue);

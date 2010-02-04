@@ -26,14 +26,14 @@
 struct xport;
 
 struct xport_vtbl {
-  void  (*destructor)   (struct xport* this_xport);
+  void  (*destructor) (struct xport* this_xport);
 
-  int   (*open)         (struct xport* this_xport, int flags);
-  int   (*close)        (struct xport* this_xport);
+  int   (*open)       (struct xport* this_xport, int flags);
+  int   (*close)      (struct xport* this_xport);
 
-  int   (*read)         (struct xport* this_xport, void* buf, size_t count,
-      unsigned long* addr, short* port);
-  int   (*write)        (struct xport* this_xport, const void* buf, size_t count);
+  int   (*read)       (struct xport* this_xport, void* buf, size_t count,
+                       unsigned long* addr, short* port);
+  int   (*write)      (struct xport* this_xport, const void* buf, size_t count);
 };
 
 struct xport {

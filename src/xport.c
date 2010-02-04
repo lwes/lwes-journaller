@@ -30,12 +30,14 @@
 int xport_factory(struct xport* this_xport)
 {
   /* Only UDP transport supported. */
-  if ( strcmp(arg_xport, "udp") != 0 ) {
-    LOG_ER("unrecognized transport type \"%s\", try \"upd\"\n",
-           arg_xport);
-    return -1;
-  }
+  if ( strcmp(arg_xport, "udp") != 0 )
+    {
+      LOG_ER("unrecognized transport type \"%s\", try \"upd\"\n",
+             arg_xport);
+      return -1;
+    }
 
   /* Since we currently have only one xport type: */
-  return xport_udp_ctor(this_xport, arg_ip, arg_interface, arg_port, arg_join_group);
+  return xport_udp_ctor (this_xport, arg_ip,
+                         arg_interface, arg_port, arg_join_group);
 }

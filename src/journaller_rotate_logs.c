@@ -36,23 +36,27 @@ int main(int argc, const char* argv[])
   const char rotate_event[] = ROTATE_COMMAND "\0";
 
   process_options(argc, argv);
-	arg_ttl = 3 ; // Command::Rotate should not be any other ...
+  arg_ttl = 3 ; /* Command::Rotate should not be any other ... */
 
-  if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) ) {
-    LOG_ER("Failed to create xport object.\n");
-    exit(EXIT_FAILURE);
-  }
+  if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
+    {
+      LOG_ER("Failed to create xport object.\n");
+      exit(EXIT_FAILURE);
+    }
 
   int idx;
-	for ( idx=0; idx<3; idx++ ){
-		if ( (xpt_write_ret = xpt.vtbl->write(&xpt,
-						rotate_event, sizeof(rotate_event))) < 0 ) {
-			LOG_ER("Xport Command::Rotate write error.");
-			xpt.vtbl->destructor(&xpt);
-			exit(EXIT_FAILURE);
-		}
-		sleep(1) ;
-	}
+  for ( idx=0; idx<3; idx++ )
+    {
+      if ( (xpt_write_ret = xpt.vtbl->write(&xpt,
+                                            rotate_event,
+                                            sizeof(rotate_event))) < 0 )
+        {
+          LOG_ER("Xport Command::Rotate write error.");
+          xpt.vtbl->destructor(&xpt);
+          exit(EXIT_FAILURE);
+        }
+      sleep(1) ;
+    }
 
   xpt.vtbl->destructor(&xpt);
 

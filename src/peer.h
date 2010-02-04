@@ -18,4 +18,4 @@
  * Boston, MA 02110-1301 USA.                                           *
  *======================================================================*/
 
-void peer_correlate(void* buf, int bufsize);
+void peer_correlate (void* buf, int bufsize);

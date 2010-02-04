@@ -45,21 +45,29 @@ void log_msg(int level, const char* fname, int lineno, const char* format, ...) 
   fprintf(stdout, "%s:%d : %s", fname, lineno, buf);
 }
 
-void log_get_level_string(char* str, int len) {
+void log_get_level_string(char* str, int len)
+{
   *str = '\0';
 
   if ( LOG_MASK_ERROR & arg_log_level )
-    strncat(str, "ERROR ", len - strlen(str));
+    {
+      strncat(str, "ERROR ", len - strlen(str));
+    }
 
   if ( LOG_MASK_WARNING & arg_log_level )
-    strncat(str, "WARNING ", len - strlen(str));
+    {
+      strncat(str, "WARNING ", len - strlen(str));
+    }
 
   if ( LOG_MASK_INFO & arg_log_level )
-    strncat(str, "INFO ", len - strlen(str));
+    {
+      strncat(str, "INFO ", len - strlen(str));
+    }
 
   if ( LOG_MASK_PROGRESS & arg_log_level )
-    strncat(str, "PROGRESS ", len - strlen(str));
+    {
+      strncat(str, "PROGRESS ", len - strlen(str));
+    }
 
   str[len - 1] = '\0';
 }
-

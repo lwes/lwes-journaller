@@ -21,6 +21,6 @@
 #ifndef XPORT_TO_QUEUE_DOT_H
 #define XPORT_TO_QUEUE_DOT_H
 
-void* xport_to_queue(void* arg);
+void* xport_to_queue (void* arg);
 
 #endif /* XPORT_TO_QUEUE_DOT_H */
