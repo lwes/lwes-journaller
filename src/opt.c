@@ -39,15 +39,15 @@ int    arg_nreaders     = 1;
 
 /* Set default queue type, types in preferred order. */
 #if HAVE_MQUEUE_H
-char*  arg_queue_type   = ARG_MQ;
+const char*  arg_queue_type   = ARG_MQ;
 #elif HAVE_SYS_MSG_H
-char*  arg_queue_type   = ARG_MSG;
+const char*  arg_queue_type   = ARG_MSG;
 #else
 #error No kernel message queue support on this platform.
 #endif
 
 /* Queue parameters. */
-char*  arg_queue_name   = "/lwes_journal";
+const char*  arg_queue_name   = "/lwes_journal";
 int    arg_queue_max_sz = 64*1024 - 1;
 int    arg_queue_max_cnt = 10000;
 int    arg_hurryup_at = 80 ;
@@ -57,29 +57,29 @@ char*  arg_sink_ram = NULL ;
 char   nam_sink_ram[500] ; // holds real /sink/ram/all_events.log.gz filename
 
 #if HAVE_LIBZ
-char*  arg_journ_type   = ARG_GZ;
+const char*  arg_journ_type   = ARG_GZ;
 #else
-char*  arg_journ_type   = ARG_FILE;
+const char*  arg_journ_type   = ARG_FILE;
 #endif
 int    arg_rotate       = 15 * 60;
 int    arg_rotate_mask  = 30 ; /* ignore any duplicate Command::Rotate within 30 seconds */
 char*  arg_monitor_type = NULL ;
 
 #if HAVE_PTHREAD_H
-char*  arg_proc_type    = ARG_THREAD;
+const char*  arg_proc_type    = ARG_THREAD;
 #else
-char*  arg_proc_type    = ARG_PROCESS;
+const char*  arg_proc_type    = ARG_PROCESS;
 #endif
 
 /* network transport parameters */
-char*  arg_xport        = "udp";
-char*  arg_ip           = "224.0.0.69";
-int    arg_port         = 9191;
-char*  arg_interface    = "";
-int    arg_join_group   = 1;
-int    arg_sockbuffer   = 16*1024*1024;
-int    arg_ttl					= 16 ;
-int    arg_nopong				= 0 ;
+const char*  arg_xport        = "udp";
+const char*  arg_ip           = "224.0.0.69";
+int          arg_port         = 9191;
+const char*  arg_interface    = "";
+int          arg_join_group   = 1;
+int          arg_sockbuffer   = 16*1024*1024;
+int          arg_ttl          = 16 ;
+int          arg_nopong       = 0 ;
 
 /* Set the logging level, see log.h. */
 int    arg_log_level    = LOG_MASK_ERROR
@@ -94,7 +94,7 @@ int    arg_site         = 1;
 /* Queue report interval. */
 /*TODO: int    arg_interval     = 60;*/
 
-char*  arg_pid_file     = "/var/run/lwes-journaller.pid";
+const char*  arg_pid_file     = "/var/run/lwes-journaller.pid";
 
 /* Journals specified and number of journals specified. */
 char** arg_journalls;
@@ -117,7 +117,7 @@ void process_options(int argc, const char* argv[])
     { "hurryup-at",    0,  POPT_ARG_INT,    &arg_hurryup_at,     0, "Hurry-up if queue use > this, dflt=80", "percentage" },
     { "hurrydown-at",  0,  POPT_ARG_INT,    &arg_hurrydown_at,   0, "Quit hurry-up when queue use returns to < this, dflt=50", "percentage" },
     { "log-level",     0,  POPT_ARG_INT,    &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
-    { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on" },
+    { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on", "ip" },
     /*TODO: { "report-interval", 's', POPT_ARG_INT, &arg_interval,       0, "Queue report interval", "seconds" },*/
     { "address",      'm', POPT_ARG_STRING, &arg_ip,             0, "IP address", "ip" },
     { "join-group",   'g', POPT_ARG_INT,    &arg_join_group,     0, "Join multicast group", "0/1" },
@@ -135,22 +135,22 @@ void process_options(int argc, const char* argv[])
         ARG_PROCESS
 #endif
         , 0	},
-    { "queue-max-cnt", 0,  POPT_ARG_INT,    &arg_queue_max_cnt,  0, "Max messages for queue, dflt=10000" },
-    { "queue-max-sz",  0,  POPT_ARG_INT,    &arg_queue_max_sz,   0, "Max message size for queue, dflt=65535" },
-    { "queue-name",   'Q', POPT_ARG_STRING, &arg_queue_name,     0, "Queue name, should start with '/', dflt='/lwes_journal'" },
+    { "queue-max-cnt", 0,  POPT_ARG_INT,    &arg_queue_max_cnt,  0, "Max messages for queue, dflt=10000", "int" },
+    { "queue-max-sz",  0,  POPT_ARG_INT,    &arg_queue_max_sz,   0, "Max message size for queue, dflt=65535", "int" },
+    { "queue-name",   'Q', POPT_ARG_STRING, &arg_queue_name,     0, "Queue name, should start with '/', dflt='/lwes_journal'", "string" },
     { "queue-type",   'q', POPT_ARG_STRING, &arg_queue_type,     0, "Queue type", "{" ARG_MSG "," ARG_MQ "}" },
     { "rotate",        0,  POPT_ARG_INT,    &arg_rotate,         0, "Journal rotate interval, dflt=900", "seconds" },
     { "rotate-mask",  'd', POPT_ARG_INT,    &arg_rotate_mask,    0, "Rotate mask, dflt=30", "seconds" },
     { "real-time",    'R', POPT_ARG_NONE,   &arg_rt,             0, "Run threads with real-time priority", 0 },
     { "sink-ram",     'z', POPT_ARG_STRING, &arg_sink_ram,       0, "/sink/ram/", "NULL" },
-    { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id" },
+    { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },
     { "ttl",          16,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
     { "version",      'v', POPT_ARG_NONE,   &arg_version,        0, "Display version, then exit", 0 },
     { "xport-type",   'x', POPT_ARG_STRING, &arg_xport,          0, "Transport, dflt=udp", "{" ARG_UDP ", ...}" },
 
     POPT_AUTOHELP
-    { NULL, 0, 0, NULL, 0 }};
+    { NULL, 0, 0, NULL, 0, NULL, NULL }};
 
   int bad_options = 0;
   int rc;

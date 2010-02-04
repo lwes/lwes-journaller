@@ -168,7 +168,7 @@ static void process_model(const char* argv[])
 
     if ( WIFSIGNALED(status) ) {
       /* If any child process exits abnormally, log it and restart. */
-      char* program = "unknown";
+      const char* program = "unknown";
 
       if ( waiting_pid == queue_to_journal_pid )
         program = "queue_to_journal";

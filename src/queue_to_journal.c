@@ -56,6 +56,7 @@ void* queue_to_journal(void* arg)
 
   int sink_ram_count = 0 ;
   time_t sink_rotate = 0 ; // latest sink rotate
+  (void)arg; /* appease -Wall -Werror */
 
   stats_ctor(&st);
 

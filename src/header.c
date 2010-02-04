@@ -54,7 +54,8 @@ void header_add(void* buf, int count, unsigned long addr, unsigned short port)
 
 int header_is_rotate (void* buf, time_t* when)
 {
-  if ( toknam_eq(buf + HEADER_LENGTH, ROTATE_COMMAND) ) {
+  if ( toknam_eq((unsigned char *)buf + HEADER_LENGTH,
+                 (unsigned char *)ROTATE_COMMAND) ) {
     unsigned long long tm;
     unsigned char* cp = (unsigned char*)buf + 2 ;
     LOG_PROG("Command::Rotate message received.\n");
@@ -64,7 +65,8 @@ int header_is_rotate (void* buf, time_t* when)
   }
 
   // Ping-Pong ?
-  if ( toknam_eq(buf + HEADER_LENGTH, JOURNALLER_PING_EVENT_TYPE) ) {
+  if ( toknam_eq((unsigned char *)buf + HEADER_LENGTH,
+                 (unsigned char *)JOURNALLER_PING_EVENT_TYPE) ) {
     LOG_PROG("System::Ping message received.\n");
     return 2;
   }
@@ -107,15 +109,15 @@ int toknam_eq(const unsigned char* toknam, const unsigned char* nam) {
 
 /////////////////////////////////////////////////////////////////////////////
 int non_revenue_bearing (const unsigned char* buf) {
-  if ( toknam_eq(buf + HEADER_LENGTH, JOURNALLER_CM_SERVE) ) {
+  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_CM_SERVE) ) {
     st.hurryup_discards[0] += 1 ;
     return 1 ;
   }
-  if ( toknam_eq(buf + HEADER_LENGTH, JOURNALLER_DM_SERVE) ) {
+  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_DM_SERVE) ) {
     st.hurryup_discards[1] += 1 ;
     return 1 ;
   }
-  if ( toknam_eq(buf + HEADER_LENGTH, JOURNALLER_SS_SERVE) ) {
+  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_SS_SERVE) ) {
     st.hurryup_discards[2] += 1 ;
     return 1 ;
   }

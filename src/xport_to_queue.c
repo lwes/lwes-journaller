@@ -46,6 +46,7 @@ void* xport_to_queue(void* arg)
   size_t bufsiz;
 
   int read_errors = 0;
+  (void)arg; /* appease -Wall -Werror */
 
   install_signal_handlers();
 

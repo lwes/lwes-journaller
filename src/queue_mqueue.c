@@ -237,12 +237,16 @@ int queue_mqueue_ctor(struct queue* this_queue,
 #else  /* if defined(HAVE_MQUEUE_H) */
 
 int queue_mqueue_ctor(struct queue* this_queue,
-		      const char*   path,
-		      size_t        max_sz,
-		      size_t        max_cnt)
+                      const char*   path,
+                      size_t        max_sz,
+                      size_t        max_cnt)
 {
   this_queue->vtbl = 0;
   this_queue->priv = 0;
+  (void)path;     /* appease -Wall -Werror */
+  (void)max_sz;   /* appease -Wall -Werror */
+  (void)max_cnt;  /* appease -Wall -Werror */
+
   return -1;
 }
 

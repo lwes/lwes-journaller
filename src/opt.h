@@ -23,29 +23,29 @@
 
 extern int      arg_args;
 extern char*    arg_basename;
-extern char*    arg_interface;
+extern const char*    arg_interface;
 /*TODO: extern int      arg_interval;*/
-extern char*    arg_ip;
+extern const char*    arg_ip;
 extern int      arg_hurryup_at;
 extern int      arg_hurrydown_at;
 extern int      arg_join_group;
 extern char**   arg_journalls;
 extern char*		arg_disk_journals[10];
 extern char*    arg_journ_name;
-extern char*    arg_journ_type;
+extern const char*    arg_journ_type;
 extern char*    arg_monitor_type;
 extern int      arg_log_level;
 extern int      arg_njournalls;
 extern int      arg_nodaemonize;
 extern int      arg_nopong;
 extern int      arg_nreaders;
-extern char*    arg_pid_file;
+extern const char*    arg_pid_file;
 extern int      arg_port;
-extern char*    arg_proc_type;
+extern const char*    arg_proc_type;
 extern int      arg_queue_max_cnt;
 extern int      arg_queue_max_sz;
-extern char*    arg_queue_name;
-extern char*    arg_queue_type;
+extern const char* arg_queue_name;
+extern const char* arg_queue_type;
 extern int      arg_rotate;
 extern int      arg_rotate_mask;
 extern int      arg_rt;
@@ -54,7 +54,7 @@ extern int      arg_site;
 extern int      arg_sockbuffer;
 extern int			arg_ttl ;
 extern int      arg_version;
-extern char*    arg_xport;
+extern const char*    arg_xport;
 
 /* arg_proc_type: */
 #define ARG_PROCESS "process"

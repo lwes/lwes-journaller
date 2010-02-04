@@ -28,7 +28,7 @@
 #include "log.h"
 #include "opt.h"
 
-void log_msg(int level, char* fname, int lineno, const char* format, ...) {
+void log_msg(int level, const char* fname, int lineno, const char* format, ...) {
   char buf[1024];
   va_list ap;
 
@@ -42,7 +42,7 @@ void log_msg(int level, char* fname, int lineno, const char* format, ...) {
   vsnprintf(buf, sizeof(buf), format, ap);
   va_end(ap);
 
-  fprintf(stdout, buf);
+  fprintf(stdout, "%s:%d : %s", fname, lineno, buf);
 }
 
 void log_get_level_string(char* str, int len) {

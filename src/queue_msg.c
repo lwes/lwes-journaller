@@ -80,11 +80,11 @@ static void set_max_msg_size(size_t max_sz)
   if ( NULL == fp )
     return;
 
-  fscanf(fp, "%d", &old_max);
+  fscanf(fp, "%ld", &old_max);
 
   if ( max_sz > old_max ) {
     rewind(fp);
-    fprintf(fp, "%d", max_sz);
+    fprintf(fp, "%ld", max_sz);
   }
 
   fclose(fp);
@@ -259,6 +259,7 @@ static void* alloc(struct queue* this_queue, size_t* newcount)
 static void dealloc(struct queue* this_queue, void* buf)
 {
   struct local_msgbuf* mp = (struct local_msgbuf*)((char*)buf - sizeof(mp->mtype));
+  (void)this_queue; /* appease -Wall -Werror */
   free(mp);
 }
 

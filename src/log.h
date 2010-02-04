@@ -65,7 +65,7 @@ enum {
  *  \param[in] lineno the line number of the file logging this message
  *  \param[in] format the format of the message
  */ 
-void log_msg(int level, char *fname, int lineno, const char* format, ...);
+void log_msg(int level, const char *fname, int lineno, const char* format, ...);
 void log_get_level_string(char* str, int len);
 
 #if defined(HAVE_GCC_MACRO_VARARGS) || defined(HAVE_GNUC_C_VARARGS)

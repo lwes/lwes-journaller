@@ -40,6 +40,7 @@ static void terminate_signal_handler(int signo)
 
 static void rotate_signal_handler(int signo)
 {
+  (void)signo; /* appease -Wall -Werror */
   gbl_rotate = 1;
 }
 

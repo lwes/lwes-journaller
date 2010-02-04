@@ -34,6 +34,7 @@
 
 int rename_journal(const char* path, time_t* last_rotate)
 {
+  char empty[1] = "";
   char* ext;
   char base[PATH_MAX];
   char newpath[PATH_MAX];
@@ -53,11 +54,11 @@ int rename_journal(const char* path, time_t* last_rotate)
     base[ext - path] = '\0';
   } else {
     strcpy(base, path);
-    ext = "";
+    ext = empty;
   }
 
 	if ( ! gbl_rotate ) // sink-ram rotate ?
-		ext = "" ;
+		ext = empty ;
 
   snprintf(newpath, sizeof(newpath), "%s.%s.%ld.%ld%s", base, timebfr, *last_rotate, now, ext);
   *last_rotate = now;

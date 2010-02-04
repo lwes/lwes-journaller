@@ -223,6 +223,7 @@ int journal_gz_ctor(struct journal* this_journal, const char* path)
 {
   this_journal->vtbl = 0;
   this_journal->priv = 0;
+  (void)path;  /* appease -Wall -Werror */
 
   return -1;
 }

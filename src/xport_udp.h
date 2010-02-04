@@ -22,8 +22,8 @@
 #define XPORT_UDP_DOT_H
 
 int xport_udp_ctor(struct xport* this_xport,
-                   char*         address,
-                   char*         iface,
+                   const char*   address,
+                   const char*   iface,
                    short         port,
                    int           join);
 
