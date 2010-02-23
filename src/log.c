@@ -32,9 +32,16 @@ void log_msg(int level, const char* fname, int lineno, const char* format, ...) 
   char buf[1024];
   va_list ap;
 
+  /* check for illegal logging level */
   if(level <= 0)
   {
     printf ("logging level <= 0\n");
+    return;
+  }
+
+  /* check for ignored message logging level */
+  if((level & arg_log_level) == 0)
+  {
     return;
   }
 
