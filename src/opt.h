@@ -46,7 +46,6 @@ extern int            arg_queue_max_cnt;
 extern int            arg_queue_max_sz;
 extern const char*    arg_queue_name;
 extern const char*    arg_queue_type;
-extern int            arg_rotate;
 extern int            arg_rotate_mask;
 extern int            arg_rt;
 extern char*          arg_sink_ram;
