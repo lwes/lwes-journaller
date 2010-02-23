@@ -132,7 +132,7 @@ static int xread (struct queue* this_queue, void* buf,
   struct priv* ppriv = (struct priv*)this_queue->priv;
   struct mq_attr attr;
   int mq_rec_rtrn;
-  int pri;
+  unsigned int pri;
 
   if ( 0 == buf )
     {
@@ -213,6 +213,7 @@ static void* alloc (struct queue* this_queue, size_t* newcount)
 
 static void dealloc (struct queue* this_queue, void* buf)
 {
+  (void) this_queue; /* appease -Wall -Werror */
   free (buf);
 }
 

@@ -65,17 +65,17 @@ AC_MSG_RESULT($g_have_sys_msg)
 if test "x$g_have_sys_msg" = "xyes" ; then
   AC_DEFINE(HAVE_SYS_MSG_H, 1, [System supports sys/msg.h])
 fi
-if test "x$g_have_sys_msg" = "x"; then
-  AC_MSG_CHECKING(for mqueue support)
-  AC_TRY_COMPILE([
-                  #include <mqueue.h>
-                  ],[ ],g_have_mqueue=yes,g_have_mqueue=no)
-  AC_MSG_RESULT($g_have_mqueue)
-  if test "x$g_have_mqueue" = "xyes" ; then
-    AC_DEFINE(HAVE_MQUEUE_H, 1, [System supports mqueue.h])
-  fi
-fi
 
+dnl Check for mqueue
+AC_MSG_CHECKING(for mqueue support)
+AC_TRY_COMPILE([
+                #include <mqueue.h>
+                ],[ ],g_have_mqueue=yes,g_have_mqueue=no)
+AC_MSG_RESULT($g_have_mqueue)
+if test "x$g_have_mqueue" = "xyes" ; then
+  AC_DEFINE(HAVE_MQUEUE_H, 1, [System supports mqueue.h])
+fi
+AC_CHECK_LIB(rt, main)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
