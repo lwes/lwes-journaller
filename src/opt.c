@@ -316,11 +316,11 @@ void process_options(int argc, const char* argv[])
               arg_interface,
               arg_ip,
               arg_journ_type,
+              arg_monitor_type,
               arg_pid_file,
               arg_proc_type,
               arg_queue_name,
               arg_queue_type,
-              arg_monitor_type,
               arg_xport,
               /*TODO: arg_interval,*/
               arg_join_group,
