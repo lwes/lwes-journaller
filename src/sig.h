@@ -32,7 +32,7 @@ typedef enum {
 } PANIC_MODE ;
 extern volatile PANIC_MODE journaller_panic_mode ;
 
-void install_signal_handlers ();
-void install_rotate_signal_handlers ();
+extern void install_signal_handlers (void);
+extern void install_rotate_signal_handlers (void);
 
 #endif /* SIG_DOT_H */
