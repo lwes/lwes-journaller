@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static void skd();
+static void skd(void);
 
 void* xport_to_queue(void* arg)
 {

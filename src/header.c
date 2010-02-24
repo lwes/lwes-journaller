@@ -140,7 +140,7 @@ static struct lwes_event_deserialize_tmp *dtmp = NULL;
 #define JOURNALLER_PING_RETURN_PORT_FIELD "ReturnPort"
 #define JOURNALLER_PING_DEFAULT_PORT 64646
 
-int
+static int
 journaller_ping_transport_send_pong (char *address, int port)
 {
   LOG_PROG("Sending System::Pong to %s:%i\n", address, port);
