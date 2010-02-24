@@ -50,6 +50,20 @@ AC_CHECK_HEADER(valgrind/valgrind.h,
                 AC_DEFINE([HAVE_VALGRIND_HEADER],
                           [1],
                           [Define to 1 if the <valgrind/valgrind.h> header is on the system]))
+AC_CHECK_HEADER(pthread.h,
+  AC_CHECK_LIB(pthread, pthread_join,[
+   THREAD_LIBS="-lpthread"
+   AC_DEFINE([HAVE_LIBPTHREAD], [1], [Define if pthread library is there (-lpthread)])
+   AC_DEFINE([HAVE_PTHREAD_H], [1], [Define if <pthread.h> is there])
+   WITH_THREADS="1"]))
+AC_SUBST(THREAD_LIBS)
+AC_CHECK_HEADER(zlib.h,
+  AC_CHECK_LIB(z, gzopen,[
+   Z_LIBS="-lz"
+   AC_DEFINE([HAVE_LIBZ], [1], [Define if zlib library is there (-lz)])
+   AC_DEFINE([HAVE_LIBZ_H], [1], [Define if <zlib.h> is there])
+   WITH_ZLIB="1"]))
+AC_SUBST(Z_LIBS)
 
 dnl Check for LWES installed
 PKG_CHECK_MODULES([LWES], [lwes-0 >= 0.22.0])

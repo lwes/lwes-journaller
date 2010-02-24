@@ -194,12 +194,14 @@ void* queue_to_journal(void* arg)
       LOG_PROG("Read %d bytes from queue (%d pending).\n",
                que_read_ret, pending);
 
-      // is this a Command::Rotate?
+      // is this a command event?
       switch ( header_is_rotate(buf, &this_rotate) )
         {
           case 2:
-            ping(buf, que_read_ret) ;
-            goto fallthru ;
+              { // System::Ping
+                ping(buf, que_read_ret) ;
+                goto fallthru ;
+              }
 
           case 1:
               { // Command::Rotate

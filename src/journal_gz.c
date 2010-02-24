@@ -67,7 +67,7 @@ static void destructor(struct journal* this_journal)
 static int xopen(struct journal* this_journal, int flags)
 {
   struct priv* ppriv = (struct priv*)this_journal->priv;
-  char* mode;
+  const char* mode;
   struct stat stbuf;
   time_t epoch = 0; /* Crashed files may include data from the past. */
 

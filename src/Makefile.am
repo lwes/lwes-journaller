@@ -62,10 +62,7 @@ lwes_journaller_rotate_SOURCES = ${commonsource} ${rotatesourcefiles}
 queue_to_journal_SOURCES = ${commonsource} ${queuejournalsources}
 xport_to_queue_SOURCES = ${commonsource} ${xportsources}
 
-lwes_journaller_LDADD=$(LWES_LIBS) -lpopt -lltdl
-lwes_journaller_rotate_LDADD=$(LWES_LIBS) -lpopt -lltdl
-queue_to_journal_LDADD=$(LWES_LIBS) -lpopt -lltdl
-xport_to_queue_LDADD=$(LWES_LIBS) -lpopt -lltdl
+LDADD = $(LWES_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt -lltdl
 
 lwes_journaller_LDFLAGS=-rdynamic
 lwes_journaller_rotate_LDFLAGS=

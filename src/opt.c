@@ -183,19 +183,6 @@ void process_options(int argc, const char* argv[])
     }
 
   arg_journalls = (char**) poptGetArgs(optCon);
-  if (      arg_journalls == NULL
-       || ! arg_journalls[0]
-       || ! strrchr(arg_journalls[0],'/') )
-    {
-      LOG_ER("%s requires output pathnames in form "
-             "'/path/to/archive/file.gz'\n", arg_basename);
-      ++bad_options;
-    }
-
-  if ( bad_options )
-    {
-      exit(EXIT_FAILURE);
-    }
 
   /* Count the journals specified on the command line. */
   if ( arg_journalls )
@@ -357,5 +344,19 @@ void process_options(int argc, const char* argv[])
                   arg_journalls[arg_njournalls]);
         }
       exit(EXIT_SUCCESS);
+    }
+
+  if (      arg_journalls == NULL
+       || ! arg_journalls[0]
+       || ! strrchr(arg_journalls[0],'/') )
+    {
+      LOG_ER("%s requires output pathnames in form "
+             "'/path/to/archive/file.gz'\n", arg_basename);
+      ++bad_options;
+    }
+
+  if ( bad_options )
+    {
+      exit(EXIT_FAILURE);
     }
 }
