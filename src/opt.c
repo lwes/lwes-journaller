@@ -145,7 +145,7 @@ void process_options(int argc, const char* argv[])
     { "sink-ram",     'z', POPT_ARG_STRING, &arg_sink_ram,       0, "/sink/ram/", "NULL" },
     { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },
-    { "ttl",          16,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
+    { "ttl",           0,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
     { "version",      'v', POPT_ARG_NONE,   &arg_version,        0, "Display version, then exit", 0 },
     { "xport-type",   'x', POPT_ARG_STRING, &arg_xport,          0, "Transport, dflt=udp", "{" ARG_UDP ", ...}" },
 
