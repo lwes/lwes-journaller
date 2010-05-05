@@ -86,6 +86,7 @@ int          arg_nopong        = 0 ;
 int    arg_log_level           =  LOG_MASK_ERROR
                                 | LOG_MASK_WARNING
                                 | LOG_MASK_INFO;
+const char* arg_log_file       = NULL;
 
 int    arg_rt                  = 0;
 
@@ -117,14 +118,14 @@ void process_options(int argc, const char* argv[])
     { "nodaemonize",   0,  POPT_ARG_NONE,   &arg_nodaemonize,    0, "Don't run in the background", 0 },
     { "hurryup-at",    0,  POPT_ARG_INT,    &arg_hurryup_at,     0, "Hurry-up if queue use > this, dflt=80", "percentage" },
     { "hurrydown-at",  0,  POPT_ARG_INT,    &arg_hurrydown_at,   0, "Quit hurry-up when queue use returns to < this, dflt=50", "percentage" },
-    { "log-level",     0,  POPT_ARG_INT,    &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
+    { "log-level",     0,  POPT_ARG_STRING, &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
+    { "log-file",      0,  POPT_ARG_STRING, &arg_log_file,       0, "Set the output log file" },
     { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on", "ip" },
     /*TODO: { "report-interval", 's', POPT_ARG_INT, &arg_interval,       0, "Queue report interval", "seconds" },*/
     { "address",      'm', POPT_ARG_STRING, &arg_ip,             0, "IP address", "ip" },
     { "join-group",   'g', POPT_ARG_INT,    &arg_join_group,     0, "Join multicast group", "0/1" },
     { "journal-type", 'j', POPT_ARG_STRING, &arg_journ_type,     0, "Journal type", "{" ARG_GZ "," ARG_FILE "}" },
     { "monitor-type", 'j', POPT_ARG_STRING, &arg_monitor_type,   0, "Monitor type", 0 },
-    { "log-level",     0,  POPT_ARG_INT,    &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
     { "nopong",        0,  POPT_ARG_NONE,   &arg_nopong,         0, "Don not reply to System::Ping", 0 },
     { "nreaders",     'r', POPT_ARG_INT,    &arg_nreaders,       0, "Number of network reading threads, dflt=1, max=5", 0 },
     { "pid-file",     'f', POPT_ARG_STRING, &arg_pid_file,       0, "PID file, dflt=NULL", "path" },
@@ -300,6 +301,7 @@ void process_options(int argc, const char* argv[])
               /*"  arg_interval == %d\n"*/
               "  arg_join_group == %d\n"
               "  arg_log_level == %s\n"
+              "  arg_log_file == %s\n"
               "  arg_njournalls == %d\n"
               "  %s" // -nopong generates own message
               "  arg_nreaders == %d\n"
@@ -325,6 +327,7 @@ void process_options(int argc, const char* argv[])
               /*TODO: arg_interval,*/
               arg_join_group,
               log_level_string,
+              arg_log_file,
               arg_njournalls,
               arg_nopong?"  arg_nopong\n":"",
               arg_nreaders,

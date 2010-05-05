@@ -35,6 +35,7 @@ extern char*          arg_journ_name;
 extern const char*    arg_journ_type;
 extern char*          arg_monitor_type;
 extern int            arg_log_level;
+extern const char*    arg_log_file;
 extern int            arg_njournalls;
 extern int            arg_nodaemonize;
 extern int            arg_nopong;
