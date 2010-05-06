@@ -209,7 +209,7 @@ static void process_model(const char* argv[])
                 }
             }
 
-          log_msg(LOG_MASK_WARNING, __FILE__, __LINE__,
+          log_msg(LOG_WARNING, __FILE__, __LINE__,
                   "Our %s process exited (pid=%d) with "
                   "signal %d, restarting.\n",
                   program, waiting_pid, WTERMSIG(status));

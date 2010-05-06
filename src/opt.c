@@ -118,8 +118,8 @@ void process_options(int argc, const char* argv[])
     { "nodaemonize",   0,  POPT_ARG_NONE,   &arg_nodaemonize,    0, "Don't run in the background", 0 },
     { "hurryup-at",    0,  POPT_ARG_INT,    &arg_hurryup_at,     0, "Hurry-up if queue use > this, dflt=80", "percentage" },
     { "hurrydown-at",  0,  POPT_ARG_INT,    &arg_hurrydown_at,   0, "Quit hurry-up when queue use returns to < this, dflt=50", "percentage" },
-    { "log-level",     0,  POPT_ARG_STRING, &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
-    { "log-file",      0,  POPT_ARG_STRING, &arg_log_file,       0, "Set the output log file" },
+    { "log-level",     0,  POPT_ARG_INT,    &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
+    { "log-file",      0,  POPT_ARG_STRING, &arg_log_file,       0, "Set the output log file", "file" },
     { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on", "ip" },
     /*TODO: { "report-interval", 's', POPT_ARG_INT, &arg_interval,       0, "Queue report interval", "seconds" },*/
     { "address",      'm', POPT_ARG_STRING, &arg_ip,             0, "IP address", "ip" },
@@ -282,9 +282,9 @@ void process_options(int argc, const char* argv[])
     {
       char log_level_string[100];
 
-      log_get_level_string(log_level_string, sizeof(log_level_string));
+      log_get_mask_string(log_level_string, sizeof(log_level_string));
 
-      log_msg(LOG_MASK_INFO, __FILE__, __LINE__,
+      log_msg(LOG_INFO, __FILE__, __LINE__,
               "arguments:\n"
               "  arg_basename == \"%s\"\n"
               "  arg_hurryup_at == %d\n"
@@ -300,7 +300,7 @@ void process_options(int argc, const char* argv[])
               "  arg_xport == \"%s\"\n"
               /*"  arg_interval == %d\n"*/
               "  arg_join_group == %d\n"
-              "  arg_log_level == %s\n"
+              "  arg_log_level == %s (%d)\n"
               "  arg_log_file == %s\n"
               "  arg_njournalls == %d\n"
               "  %s" // -nopong generates own message
@@ -327,6 +327,7 @@ void process_options(int argc, const char* argv[])
               /*TODO: arg_interval,*/
               arg_join_group,
               log_level_string,
+              arg_log_level,
               arg_log_file,
               arg_njournalls,
               arg_nopong?"  arg_nopong\n":"",
@@ -341,7 +342,7 @@ void process_options(int argc, const char* argv[])
 
       for ( arg_njournalls=0; arg_journalls[arg_njournalls]; ++arg_njournalls )
         {
-          log_msg(LOG_MASK_INFO, __FILE__, __LINE__,
+          log_msg(LOG_INFO, __FILE__, __LINE__,
                   "journall[%d] == %s\n",
                   arg_njournalls,
                   arg_journalls[arg_njournalls]);

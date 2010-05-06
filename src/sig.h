@@ -23,6 +23,7 @@
 
 extern volatile int gbl_done;
 extern volatile int gbl_rotate;
+extern volatile int gbl_rotate_log;
 typedef enum {
     PANIC_NOT,        // quiescent
     PANIC_STARTUP,    // signal to xport_to_queue to start panic

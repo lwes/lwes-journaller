@@ -31,6 +31,7 @@
 
 volatile int gbl_done = 0;
 volatile int gbl_rotate = 0;
+volatile int gbl_rotate_log = 0;
 volatile PANIC_MODE journaller_panic_mode = PANIC_NOT ;
 
 static void terminate_signal_handler(int signo)
@@ -42,6 +43,12 @@ static void rotate_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
   gbl_rotate = 1;
+}
+
+static void rotate_log_signal_handler(int signo)
+{
+  (void)signo; /* appease -Wall -Werror */
+  gbl_rotate_log = 1;
 }
 
 static void install(int signo, void (*handler)(int signo))
@@ -88,8 +95,11 @@ void install_signal_handlers()
 
 void install_rotate_signal_handlers()
 {
-  /* This one triggers a log rotate. */
   LOG_PROG("Installing rotate signal handlers.\n");
 
+  /* This one triggers a journal rotate. */
   install(SIGHUP, rotate_signal_handler);
+
+  /* This one triggers a log rotate. */
+  install(SIGUSR1, rotate_log_signal_handler);
 }

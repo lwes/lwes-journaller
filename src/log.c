@@ -29,60 +29,32 @@
 #include <errno.h>
 #include "log.h"
 #include "opt.h"
+#include "sig.h"
 
 #define LOG_INTERVAL        86400
 #define MAX_LOG_FILE_LENGTH  1024
 #define TIMESTAMP_LENGTH      100
 
-static FILE* log          = NULL;
-time_t       log_time     = 0;
+static FILE* log = NULL;
 
-static void rotate(const char *time_str) {
-  char new_log_file[MAX_LOG_FILE_LENGTH+TIMESTAMP_LENGTH+2];
-  char *cp;
-  int index;
-  struct stat *stat_buf;
-  /* there's no point in trying to rotate a nonexistent log file */
-  if (stat(arg_log_file)!=0) return;
-  /* add the date to the filename */
-  strncpy(new_log_file,arg_log_file,sizeof(new_log_file));
-  strncat(new_log_file,"-",sizeof(new_log_file));
-  strncat(new_log_file,time_str,sizeof(new_log_file));
-  cp = strrchr(new_log_file,' ');
-  if (cp != NULL)
-  {
-    *cp = '\0';
-  }
-  /* as long as we're pointing at an existing file, increment a suffix. */
-  cp = new_log_file+strlen(new_log_file);
-  for (index=0; 1; ++index)
-  {
-    *cp = '\0';
-    if (index>0) sprintf(cp,".%d",index);
-    if (stat(new_log_file)==0) continue;
-    if (errno==ENOENT) break;
-  }
-  /* we finally have a filename to which we can rotate the log. */
-  rename(arg_log_file, new_log_file);
-}
-
-static FILE* get_log(time_t time, const char *time_str)
+static FILE* get_log()
 {
   /* if no log file was specified, log to stdout. */
   /* note that this means /dev/null unless --nodaemonize is set */
   if (arg_log_file==NULL) return stdout;
 
-  if (log!=NULL && time-log_time>LOG_INTERVAL)
+  /* if a log file rotation has been requested, close the current handle. */
+  /* it is probably the case that logrotate(8) has moved it to another name. */
+  if (gbl_rotate_log && log)
   {
     fclose(log);
     log = NULL;
-    rotate(time_str);
+    gbl_rotate_log = 0;
   }
-  
-  /* if we have no log open, open one. */
+
+  /* if we have no log open now, open one. */
   if (log==NULL)
   {
-    rotate(time_str);
     log = fopen(arg_log_file,"a+");
   }
   
@@ -90,25 +62,48 @@ static FILE* get_log(time_t time, const char *time_str)
   return log==NULL ? stdout : log;
 }
 
-void log_msg(int level, const char* fname, int lineno, const char* format, ...)
+static int is_logging(log_level_t level)
+{
+  return !!((1 << level) & arg_log_level);
+}
+
+static const char* log_get_level_string(int level)
+{
+  switch (level)
+  {
+    case LOG_OFF:
+      return "OFF";
+    case LOG_ERROR:
+      return "ERR";
+    case LOG_WARNING:
+      return "WARN";
+    case LOG_INFO:
+      return "INFO";
+    case LOG_PROGRESS:
+      return "PROG";
+    default:
+      if (log!=NULL) fprintf(log, "(OTHER=%d)", level);
+      return "OTHER";
+  }
+}
+
+void log_msg(log_level_t level, const char* fname, int lineno, const char* format, ...)
 {
   char buf[1024];
   va_list ap;
+  FILE* log;
   char timestr[TIMESTAMP_LENGTH];
   time_t t;
 
   /* check for illegal logging level */
-  if(level <= 0)
+  if(level <= 0 || level > LOG_PROGRESS)
   {
-    printf ("logging level <= 0\n");
+    printf ("logging level was %d\n", level);
     return;
   }
 
   /* check for ignored message logging level */
-  if((level & arg_log_level) == 0)
-  {
-    return;
-  }
+  if(! is_logging(level)) return;
 
   va_start(ap, format);
   vsnprintf(buf, sizeof(buf), format, ap);
@@ -119,33 +114,26 @@ void log_msg(int level, const char* fname, int lineno, const char* format, ...)
   {
     strncpy(timestr, "TIME ERROR", sizeof(timestr)-1);
   }
-  fprintf(get_log(t,timestr), "%s %s:%d : %s", timestr, fname, lineno, buf);
-  log_time = t;
+  log = get_log();
+  fprintf(log, "%s %s %s:%d : %s", timestr, log_get_level_string(level), fname, lineno, buf);
+  fflush(log);
 }
 
-void log_get_level_string(char* str, int len)
+static void log_append_masked_level(char* str, int len, int level)
+{
+  if (!is_logging(level)) return;
+  strncat(str, log_get_level_string(level), len - strlen(str));
+  strncat(str, " ", len - strlen(str));
+}
+
+void log_get_mask_string(char* str, int len)
 {
   *str = '\0';
 
-  if ( LOG_MASK_ERROR & arg_log_level )
-    {
-      strncat(str, "ERROR ", len - strlen(str));
-    }
+  log_append_masked_level(str, len, LOG_ERROR);
+  log_append_masked_level(str, len, LOG_WARNING);
+  log_append_masked_level(str, len, LOG_INFO);
+  log_append_masked_level(str, len, LOG_PROGRESS);
 
-  if ( LOG_MASK_WARNING & arg_log_level )
-    {
-      strncat(str, "WARNING ", len - strlen(str));
-    }
-
-  if ( LOG_MASK_INFO & arg_log_level )
-    {
-      strncat(str, "INFO ", len - strlen(str));
-    }
-
-  if ( LOG_MASK_PROGRESS & arg_log_level )
-    {
-      strncat(str, "PROGRESS ", len - strlen(str));
-    }
-
-  str[len - 1] = '\0';
+  if (len>0) str[len - 1] = '\0';
 }
