@@ -104,7 +104,7 @@ void* queue_to_journal(void* arg)
     }
 
   /* Read a packet from the queue, write it to the journal. */
-  while ( ! gbl_done )
+  while ( 1 )
     {
       int que_read_ret;
       int jrn_write_ret;
@@ -169,6 +169,8 @@ void* queue_to_journal(void* arg)
 
       if ( (que_read_ret = que.vtbl->read(&que, buf, bufsiz, &pending)) < 0 )
         {
+          /* queue is empty; if we're shutting down, exit this loop. */
+          if (gbl_done) break;
           /* queue is empty, is panic over? */
           if ( journaller_panic_mode == PANIC_IN_EFFECT )
             {

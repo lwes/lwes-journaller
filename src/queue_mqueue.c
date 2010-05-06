@@ -25,6 +25,7 @@
 
 #include "perror.h"
 #include "opt.h"
+#include "sig.h"
 
 #if defined(HAVE_MQUEUE_H)
 
@@ -37,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /* The following is for Solaris. */
 #if !defined(MQ_PRIO_MAX) && defined(_POSIX_MQ_PRIO_MAX)
@@ -133,6 +135,7 @@ static int xread (struct queue* this_queue, void* buf,
   struct mq_attr attr;
   int mq_rec_rtrn;
   unsigned int pri;
+  struct timespec time_buf = { time(NULL)+1, 500000000 };
 
   if ( 0 == buf )
     {
@@ -145,10 +148,11 @@ static int xread (struct queue* this_queue, void* buf,
       return -1;
     }
 
-  LOG_PROG("about to call mq_receive().\n");
+  LOG_PROG("about to call mq_receive().  gbl_done=%d\n", gbl_done);
 
-  if ( (mq_rec_rtrn = mq_receive (ppriv->mq, buf, count, &pri)) < 0 )
+  if ( (mq_rec_rtrn = mq_timedreceive (ppriv->mq, buf, count, &pri, &time_buf)) < 0 )
     {
+      LOG_PROG("errno: %d %s\n", errno, strerror(errno));
       switch ( errno )
         {
         default:
@@ -156,6 +160,7 @@ static int xread (struct queue* this_queue, void* buf,
 
           /* If we've been interrupted it's likely that we're shutting
              down, so no need to print errors. */
+        case ETIMEDOUT:
         case EINTR:
           return mq_rec_rtrn;
         }
