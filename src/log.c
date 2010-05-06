@@ -31,10 +31,6 @@
 #include "opt.h"
 #include "sig.h"
 
-#define LOG_INTERVAL        86400
-#define MAX_LOG_FILE_LENGTH  1024
-#define TIMESTAMP_LENGTH      100
-
 static FILE* log = NULL;
 
 static FILE* get_log()
@@ -91,7 +87,7 @@ void log_msg(log_level_t level, const char* fname, int lineno, const char* forma
   char buf[1024];
   va_list ap;
   FILE* log;
-  char timestr[TIMESTAMP_LENGTH];
+  char timestr[100];
   time_t t;
 
   /* check for illegal logging level */
