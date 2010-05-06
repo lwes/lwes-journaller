@@ -83,7 +83,8 @@ static int xopen(struct journal* this_journal, int flags)
   case O_WRONLY:
     mode = "wb";
     if ( 0 == stat(ppriv->path, &stbuf) ) {
-      rename_journal(ppriv->path, &epoch);
+      epoch = stbuf.st_ctime;
+      if (stbuf.st_size > 0) rename_journal(ppriv->path, &epoch);
     }
     break;
 
