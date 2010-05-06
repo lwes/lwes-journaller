@@ -82,7 +82,6 @@ static const char* log_get_level_string(int level)
     case LOG_PROGRESS:
       return "PROG";
     default:
-      if (log!=NULL) fprintf(log, "(OTHER=%d)", level);
       return "OTHER";
   }
 }
