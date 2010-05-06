@@ -25,6 +25,7 @@
 #include "log.h"
 #include "sig.h"
 #include "perror.h"
+#include "opt.h"
 
 #include <limits.h>
 #include <stdio.h>
@@ -76,6 +77,14 @@ int rename_journal(const char* path, time_t* last_rotate)
       char buf[100] ;
       LOG_ER("rename: %s: - '%s' -> '%s'\n",
              strerror_r(errno,buf,sizeof(buf)), path, newpath);
+      return -1;
+    }
+
+  if ( chown(newpath, arg_journal_uid, -1) < 0 )
+    {
+      char buf[100] ;
+      LOG_ER("rename: %s: - '%s' could not be granted to uid %d\n",
+             strerror_r(errno,buf,sizeof(buf)), newpath, arg_journal_uid);
       return -1;
     }
 

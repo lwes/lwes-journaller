@@ -53,6 +53,7 @@ extern char*          arg_sink_ram;
 extern int            arg_site;
 extern int            arg_sockbuffer;
 extern int            arg_ttl;
+extern int            arg_journal_uid;
 extern int            arg_version;
 extern const char*    arg_xport;
 

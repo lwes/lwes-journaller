@@ -30,6 +30,8 @@
 #include <popt.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 /* Base program name from argv[0]. */
 char*        arg_basename      = 0;
@@ -93,6 +95,10 @@ int    arg_rt                  = 0;
 /* site ID used to set various config items from config file. */
 int    arg_site                = 1;
 
+/* intended owner of journal files */
+int         arg_journal_uid    = 0;
+const char* arg_journal_user   = NULL;
+
 /* Queue report interval. */
 /*TODO: int    arg_interval     = 60;*/
 
@@ -147,6 +153,7 @@ void process_options(int argc, const char* argv[])
     { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },
     { "ttl",           0,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
+    { "user",          0,  POPT_ARG_STRING, &arg_journal_user,   0, "Owner of journal files", "user" },
     { "version",      'v', POPT_ARG_NONE,   &arg_version,        0, "Display version, then exit", 0 },
     { "xport-type",   'x', POPT_ARG_STRING, &arg_xport,          0, "Transport, dflt=udp", "{" ARG_UDP ", ...}" },
 
@@ -220,6 +227,22 @@ void process_options(int argc, const char* argv[])
       arg_journalls[0] = nam_sink_ram ;
       arg_journalls[1] = NULL ;
       arg_njournalls = 1 ;
+    }
+
+  /* convert the journal file username to a uid */
+  if ( arg_journal_user != NULL)
+    {
+      struct passwd *pw_entry = getpwnam(arg_journal_user);
+      if (pw_entry==NULL)
+        {
+          LOG_ER("%s was told to use a file owner (%s) that could not be found\n",
+                 arg_basename, arg_journal_user);
+          ++bad_options;
+        }
+      else
+        {
+          arg_journal_uid = pw_entry->pw_uid;
+        }
     }
 
   if ( arg_version )
@@ -311,7 +334,9 @@ void process_options(int argc, const char* argv[])
               "  arg_rt == %d\n"
               "  arg_sink_ram == %s\n"
               "  arg_site == %d\n"
-              "  arg_ttl == %d\n",
+              "  arg_ttl == %d\n"
+              "  arg_journal_user == %s\n"
+              "  arg_journal_uid == %d\n",
               arg_basename,
               arg_hurryup_at,
               arg_hurrydown_at,
@@ -338,7 +363,9 @@ void process_options(int argc, const char* argv[])
               arg_rt,
               arg_sink_ram,
               arg_site,
-              arg_ttl);
+              arg_ttl,
+              arg_journal_user,
+              arg_journal_uid);
 
       for ( arg_njournalls=0; arg_journalls[arg_njournalls]; ++arg_njournalls )
         {
