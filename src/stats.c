@@ -256,6 +256,6 @@ void stats_report(struct stats* st)
       LOG_INF(" %g bps, %g pps.\n", bps, pps);
     }
 
-  LOG_INF("Stats summary:\t%d\t%lld\t%lld\t%g\t%g\t%s",
-          now, st->bytes_total, st->packets_total, bps, pps);
+  LOG_INF("Stats summary:\t%d\t%lld\t%lld\t%d\n",
+          now, st->bytes_total, st->packets_total, uptime);
 }
