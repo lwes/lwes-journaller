@@ -32,6 +32,7 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#include <unistd.h>
 
 int rename_journal(const char* path, time_t* last_rotate)
 {
