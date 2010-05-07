@@ -208,6 +208,14 @@ void stats_rotate(struct stats* st)
   st->loss = 0LL;
   st->last_rotate = now;
   memset(&st->hurryup_discards, 0, sizeof(st->hurryup_discards)) ;
+
+  LOG_INF("Stats summary v1:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\t%d\t%d\t%d\t%lld\t%lld\t%d\n",
+          now, st->loss, st->bytes_total, st->bytes_since_last_rotate,
+          st->packets_total, st->packets_since_last_rotate,
+          st->bytes_in_burst, st->packets_in_burst, st->hiq,
+          st->hiq_start, st->hiq_last, st->hiq_since_last_rotate,
+          st->bytes_in_burst_since_last_rotate,
+          st->packets_in_burst_since_last_rotate, uptime);
 }
 
 void stats_report(struct stats* st)
@@ -255,7 +263,4 @@ void stats_report(struct stats* st)
     {
       LOG_INF(" %g bps, %g pps.\n", bps, pps);
     }
-
-  LOG_INF("Stats summary:\t%d\t%lld\t%lld\t%d\n",
-          now, st->bytes_total, st->packets_total, uptime);
 }
