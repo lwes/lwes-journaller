@@ -2,7 +2,7 @@
 
 # any additional includes to add to the compile lines
 
-myincludes = $(LWES_CFLAGS)
+myincludes = $(LWES_CFLAGS) $(MONDEMAND_CFLAGS)
 
 # any additional files to add to the distribution
 
@@ -21,6 +21,7 @@ mymaintainercleanfiles = config.h.in
 commonsource = \
 								opt.c \
 								log.c \
+								lwes_mondemand.c \
 								header.c \
 								journal_factory.c \
 								journal_file.c \
@@ -62,7 +63,7 @@ lwes_journaller_rotate_SOURCES = ${commonsource} ${rotatesourcefiles}
 queue_to_journal_SOURCES = ${commonsource} ${queuejournalsources}
 xport_to_queue_SOURCES = ${commonsource} ${xportsources}
 
-LDADD = $(LWES_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt -lltdl
+LDADD = $(LWES_LIBS) $(MONDEMAND_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt -lltdl
 
 lwes_journaller_LDFLAGS=-rdynamic
 lwes_journaller_rotate_LDFLAGS=

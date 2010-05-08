@@ -70,6 +70,16 @@ PKG_CHECK_MODULES([LWES], [lwes-0 >= 0.22.0])
 AC_SUBST(LWES_CFLAGS)
 AC_SUBST(LWES_LIBS)
 
+dnl Check for mondemand installed, if requested
+AC_ARG_WITH([mondemand], AS_HELP_STRING([--with-mondemand],
+                          [Build with support for mondemand logging and statistics (default: disabled)]))
+if test "x$with_mondemand" == "xyes"; then
+  PKG_CHECK_MODULES([MONDEMAND], [mondemand-1 >= 1.0])
+  AC_SUBST(MONDEMAND_CFLAGS)
+  AC_SUBST(MONDEMAND_LIBS)
+  AC_DEFINE(HAVE_MONDEMAND, 1, [System supports mondemand])
+fi
+
 dnl Check for messaging
 AC_MSG_CHECKING(for sys/msg support)
 AC_TRY_COMPILE([

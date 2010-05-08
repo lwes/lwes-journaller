@@ -27,6 +27,7 @@
 #include "opt.h"
 #include "sig.h"
 #include "marshal.h"
+#include "lwes_mondemand.h"
 
 #include <string.h>
 #include <time.h>
@@ -216,6 +217,8 @@ void stats_rotate(struct stats* st)
           st->hiq_start, st->hiq_last, st->hiq_since_last_rotate,
           st->bytes_in_burst_since_last_rotate,
           st->packets_in_burst_since_last_rotate, uptime);
+
+  mondemand_stats(st,now);
 }
 
 void stats_report(struct stats* st)
