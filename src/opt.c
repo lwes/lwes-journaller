@@ -118,8 +118,9 @@ int    arg_version;
 int    arg_args;
 
 #ifdef HAVE_MONDEMAND
-const char*    arg_mondemand_ip   = NULL;
-int            arg_mondemand_port = 20402;
+const char*    arg_mondemand_label = NULL;
+const char*    arg_mondemand_ip    = NULL;
+int            arg_mondemand_port  = 20402;
 #endif
 
 void process_options(int argc, const char* argv[])
@@ -162,6 +163,7 @@ void process_options(int argc, const char* argv[])
     { "version",      'v', POPT_ARG_NONE,   &arg_version,        0, "Display version, then exit", 0 },
     { "xport-type",   'x', POPT_ARG_STRING, &arg_xport,          0, "Transport, dflt=udp", "{" ARG_UDP ", ...}" },
 #ifdef HAVE_MONDEMAND
+    { "mondemand-label",0, POPT_ARG_STRING, &arg_mondemand_label,0, "Mondemand monitoring label", "string" },
     { "mondemand-ip",   0, POPT_ARG_STRING, &arg_mondemand_ip,   0, "Mondemand monitoring ip", "ip-address" },
     { "mondemand-port", 0, POPT_ARG_INT,    &arg_mondemand_port, 0, "Mondemand monitoring port dflt=20402", "port" },
 #endif
