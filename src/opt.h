@@ -57,6 +57,11 @@ extern int            arg_journal_uid;
 extern int            arg_version;
 extern const char*    arg_xport;
 
+#ifdef HAVE_MONDEMAND
+extern const char*    arg_mondemand_ip;
+extern int            arg_mondemand_port;
+#endif
+
 /* arg_proc_type: */
 #define ARG_PROCESS "process"
 #define ARG_THREAD  "thread"

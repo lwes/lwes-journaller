@@ -1,4 +1,5 @@
 #include "lwes_mondemand.h"
+#include "opt.h"
 
 #ifdef HAVE_MONDEMAND
 
@@ -8,8 +9,8 @@ struct mondemand_client *client;
 static void init()
 {
   if (client!=NULL) return;
-  client = mondemand_client_create("lwes-journaller");
-  mondemand_add_transport(client, mondemand_transport_lwes_create("127.0.0.1",20402,"127.0.0.1",0,0));
+  client = mondemand_client_create("lwes-journaller-unknown");
+  mondemand_add_transport(client, mondemand_transport_lwes_create(arg_mondemand_ip,arg_mondemand_port,NULL,0,0));
 }
 
 void mondemand_stats (const struct stats* stats, time_t now)
