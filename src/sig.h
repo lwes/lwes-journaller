@@ -24,14 +24,6 @@
 extern volatile int gbl_done;
 extern volatile int gbl_rotate;
 extern volatile int gbl_rotate_log;
-typedef enum {
-    PANIC_NOT,        // quiescent
-    PANIC_STARTUP,    // signal to xport_to_queue to start panic
-    PANIC_IN_EFFECT,  // panic mode is in effect
-    PANIC_SHUTDOWN,   // signal to xport_to_queue that panic is done
-    PANIC_HURRYUP     // hurry-up mode is in effect
-} PANIC_MODE ;
-extern volatile PANIC_MODE journaller_panic_mode ;
 
 extern void install_signal_handlers (void);
 extern void install_rotate_signal_handlers (void);

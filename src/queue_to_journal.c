@@ -171,26 +171,7 @@ void* queue_to_journal(void* arg)
         {
           /* queue is empty; if we're shutting down, exit this loop. */
           if (gbl_done) break;
-          /* queue is empty, is panic over? */
-          if ( journaller_panic_mode == PANIC_IN_EFFECT )
-            {
-              journaller_panic_mode = PANIC_SHUTDOWN ; /* panic is over */
-              LOG_INF("PANIC is over:  hi-burst: %lli packets, %lli bytes.\n",
-                      st.packets_in_burst_since_last_rotate,
-                      st.bytes_in_burst_since_last_rotate);
-            }
-          else
-            {
-              /* queue is empty, is hurry-up over? */
-              if ( journaller_panic_mode == PANIC_HURRYUP )
-                {
-                  journaller_panic_mode = PANIC_NOT ; // panic is over
-                  LOG_INF("HURRYUP is over:  hi-burst: %lli packets, "
-                          "%lli bytes.\n",
-                          st.packets_in_burst_since_last_rotate,
-                          st.bytes_in_burst_since_last_rotate);
-                }
-            }
+          /* queue is empty */
           continue;
       }
       LOG_PROG("Read %d bytes from queue (%d pending).\n",
@@ -226,51 +207,6 @@ void* queue_to_journal(void* arg)
 
           default:
 fallthru:
-            // if hurry-up or panic, discard non-revenue-bearing events
-            switch ( journaller_panic_mode )
-              {
-                case PANIC_HURRYUP: // clear hurry-up mode if it has worked ...
-                  if ( pending <= (arg_queue_max_cnt*arg_hurrydown_at)/100 )
-                    {
-                      LOG_INF("HURRYUP finish, pending=%i <= %i hi-burst: "
-                              "%lli packets, %lli bytes.\n",
-                              pending,(arg_queue_max_cnt*arg_hurrydown_at)/100,
-                              st.packets_in_burst_since_last_rotate,
-                              st.bytes_in_burst_since_last_rotate);
-                      journaller_panic_mode = PANIC_NOT ;
-                    }
-                  else
-                    {
-                      if ( non_revenue_bearing(buf) )
-                        {
-                          continue ;
-                        }
-                    }
-
-                  break ;
-
-                case PANIC_IN_EFFECT: // clear panic mode if it has worked ...
-                  if ( pending <= 100 )
-                    { // queue is empty, is panic over?
-                      journaller_panic_mode = PANIC_SHUTDOWN ; // panic is over
-                      LOG_INF("PANIC is over:  hi-burst: %lli packets, "
-                              "%lli bytes.\n",
-                              st.packets_in_burst_since_last_rotate,
-                              st.bytes_in_burst_since_last_rotate);
-                    }
-                  else
-                    {
-                      if ( non_revenue_bearing(buf) )
-                        {
-                          continue ;
-                        }
-                    }
-                  break ;
-
-                default:
-                  break ;
-              }
-
             stats_record(&st, que_read_ret, pending);
             /* Write the packet out to the journal. */
             if ( (jrn_write_ret = jrn[jcurr].vtbl->write(&jrn[jcurr],

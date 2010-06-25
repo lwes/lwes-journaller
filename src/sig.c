@@ -32,7 +32,6 @@
 volatile int gbl_done = 0;
 volatile int gbl_rotate = 0;
 volatile int gbl_rotate_log = 0;
-volatile PANIC_MODE journaller_panic_mode = PANIC_NOT ;
 
 static void terminate_signal_handler(int signo)
 {

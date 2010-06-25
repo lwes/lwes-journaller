@@ -112,26 +112,6 @@ int toknam_eq(const unsigned char* toknam, const unsigned char* nam)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-int non_revenue_bearing (const unsigned char* buf)
-{
-  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_CM_SERVE) )
-    {
-      st.hurryup_discards[0] += 1 ;
-      return 1 ;
-    }
-  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_DM_SERVE) )
-    {
-      st.hurryup_discards[1] += 1 ;
-      return 1 ;
-    }
-  if ( toknam_eq(buf + HEADER_LENGTH,(unsigned char *)JOURNALLER_SS_SERVE) )
-    {
-      st.hurryup_discards[2] += 1 ;
-      return 1 ;
-    }
-  return 0 ;
-}
-
 /* globals */
 static struct lwes_emitter *emitter = NULL ;
 static struct lwes_event_deserialize_tmp *dtmp = NULL;

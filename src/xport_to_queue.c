@@ -86,32 +86,6 @@ void* xport_to_queue(void* arg)
       unsigned long addr;
       short port;
 
-      switch ( journaller_panic_mode )
-        {
-          case PANIC_STARTUP: // panic! system queue is max'd out (receiver live-lock?)
-            // close the socket
-            xpt.vtbl->close(&xpt) ;
-            journaller_panic_mode = PANIC_IN_EFFECT ;
-          case PANIC_IN_EFFECT: // waiting for system queue to empty
-            continue ; // socket is closed, so we can't read it anyway
-          case PANIC_SHUTDOWN: // panic is over
-            // reopen the socket
-            LOG_PROG("PANIC shutdown - reopening the multicast socket\n") ;
-            if (    (xport_factory(&xpt) < 0)
-                    || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
-              {
-                LOG_ER("Failed to reopen xport object after PANIC.\n");
-                exit(EXIT_FAILURE);
-              }
-            LOG_PROG("PANIC shutdown - opened the multicast socket\n") ;
-            journaller_panic_mode = PANIC_NOT ;
-            break ;
-          case PANIC_HURRYUP: // hurry-up mode
-            break ;
-          case PANIC_NOT:
-            break ;
-        }
-
       if ( (xpt_read_ret = xpt.vtbl->read(&xpt,
                                           buf + HEADER_LENGTH,
                                           bufsiz - HEADER_LENGTH,
@@ -129,13 +103,6 @@ void* xport_to_queue(void* arg)
           LOG_PROG("read_errors == %d\n", read_errors);
         }
       read_errors = 0;
-
-      // if hurry-up, discard non-revenue-bearing events
-      if ( (journaller_panic_mode == PANIC_HURRYUP)
-           && non_revenue_bearing(buf) )
-        {
-          continue ;
-        }
 
       header_add(buf, xpt_read_ret, addr, port);
 

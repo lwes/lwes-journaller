@@ -50,8 +50,6 @@ struct stats {
   time_t last_rotate;
 
   struct event_header latest_rotate_header ; /* Of the Command::Rotate that was acted on */
-
-  long hurryup_discards[3] ;
 };
 
 int stats_ctor (struct stats* this_stats);

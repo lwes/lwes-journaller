@@ -52,8 +52,6 @@ const char*  arg_queue_type    = ARG_MSG;
 const char*  arg_queue_name    = "/lwes_journal";
 int          arg_queue_max_sz  = 64*1024 - 1;
 int          arg_queue_max_cnt = 10000;
-int          arg_hurryup_at    = 80 ;
-int          arg_hurrydown_at  = 50 ;
 int          arg_join_group;
 char*        arg_sink_ram      = NULL ;
 char         nam_sink_ram[500] ; /* holds real /sink/ram/all_events.log.gz
@@ -128,8 +126,6 @@ void process_options(int argc, const char* argv[])
   static const struct poptOption options[] = {
     { "args",          0,  POPT_ARG_NONE,   &arg_args,           0, "Print command line arguments, then exit", 0 },
     { "nodaemonize",   0,  POPT_ARG_NONE,   &arg_nodaemonize,    0, "Don't run in the background", 0 },
-    { "hurryup-at",    0,  POPT_ARG_INT,    &arg_hurryup_at,     0, "Hurry-up if queue use > this, dflt=80", "percentage" },
-    { "hurrydown-at",  0,  POPT_ARG_INT,    &arg_hurrydown_at,   0, "Quit hurry-up when queue use returns to < this, dflt=50", "percentage" },
     { "log-level",     0,  POPT_ARG_INT,    &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
     { "log-file",      0,  POPT_ARG_STRING, &arg_log_file,       0, "Set the output log file", "file" },
     { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on", "ip" },
@@ -321,8 +317,6 @@ void process_options(int argc, const char* argv[])
       log_msg(LOG_INFO, __FILE__, __LINE__,
               "arguments:\n"
               "  arg_basename == \"%s\"\n"
-              "  arg_hurryup_at == %d\n"
-              "  arg_hurrydown_at == %d\n"
               "  arg_interface == \"%s\"\n"
               "  arg_ip == \"%s\"\n"
               "  arg_journ_type == \"%s\"\n"
@@ -349,8 +343,6 @@ void process_options(int argc, const char* argv[])
               "  arg_journal_user == %s\n"
               "  arg_journal_uid == %d\n",
               arg_basename,
-              arg_hurryup_at,
-              arg_hurrydown_at,
               arg_interface,
               arg_ip,
               arg_journ_type,

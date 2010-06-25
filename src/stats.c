@@ -104,37 +104,6 @@ void stats_record (struct stats* st, int bytes, int pending)
     {
       st->hiq_since_last_rotate = st->hiq ;
     }
-
-  // we might need to hurry-up or panic, 
-  //  so if we're not already doing that, 
-  //  check if we need to start it now
-  //  (8 and 9 are "inducing" hurry-up or panic)
-  if ( journaller_panic_mode == 0 )
-    {
-      if ( pending >= (arg_queue_max_cnt-10) )
-        {
-          /* induce panic - xport_to_queue will close socket and wait
-           * for journaller_panic_mode == 3 */
-          journaller_panic_mode = PANIC_STARTUP ;
-          LOG_INF("PANIC, queue is max'd out! hi-burst: %lli packets, "
-                  "%lli bytes.\n",
-                  st->packets_in_burst_since_last_rotate,
-                  st->bytes_in_burst_since_last_rotate);
-        }
-      else
-        {
-          if ( (pending >= (arg_queue_max_cnt*arg_hurryup_at)/100) )
-            {
-              /* hurry-up - xport_to_queue will discard non-revenue events */
-              journaller_panic_mode = PANIC_HURRYUP ;
-              LOG_INF("HURRYUP start, pending=%i >= %i, hi-burst: "
-                      "%lli packets, %lli bytes.\n",
-                      pending,(arg_queue_max_cnt*arg_hurryup_at)/100,
-                      st->packets_in_burst_since_last_rotate,
-                      st->bytes_in_burst_since_last_rotate);
-            }
-        }
-    }
 }
 
 void stats_rotate(struct stats* st)
@@ -181,22 +150,6 @@ void stats_rotate(struct stats* st)
           st->packets_in_burst_since_last_rotate,
           st->bytes_in_burst_since_last_rotate);
 
-  if ( st->hurryup_discards[0] )
-    {
-      LOG_INF("%u CM::Serve events discarded in hurry-up mode\n",
-              st->hurryup_discards[0]) ;
-    }
-  if ( st->hurryup_discards[1] )
-    {
-      LOG_INF("%u DM::Serve events discarded in hurry-up mode\n",
-              st->hurryup_discards[1]) ;
-    }
-  if ( st->hurryup_discards[2] )
-    {
-      LOG_INF("%u SS::Serve events discarded in hurry-up mode\n",
-              st->hurryup_discards[2]) ;
-    }
-
   //TODO: it's *impossible* to get the sender_ip via unmarshal_any_f'ng_thing!
   //LOG_INF("Command::Rotate received from IP %s", inet_ntoa(inaddr)) ;
   LOG_INF("Command::Rotate received from IP %u.%u.%u.%u\n",
@@ -208,7 +161,6 @@ void stats_rotate(struct stats* st)
   st->packets_in_burst_since_last_rotate = st->bytes_in_burst_since_last_rotate = 0LL ;
   st->loss = 0LL;
   st->last_rotate = now;
-  memset(&st->hurryup_discards, 0, sizeof(st->hurryup_discards)) ;
 
   LOG_INF("Stats summary v1:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\t%d\t%d\t%d\t%lld\t%lld\t%d\n",
           now, st->loss, st->bytes_total, st->bytes_since_last_rotate,
