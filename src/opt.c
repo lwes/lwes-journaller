@@ -380,6 +380,24 @@ void process_options(int argc, const char* argv[])
       exit(EXIT_SUCCESS);
     }
 
+  if (    arg_mondemand_host == NULL
+       && arg_mondemand_ip   != NULL )
+    {
+      /* mondemand was requested, but no hostname was specified.  Choose one. */
+      char host[256];
+      if ( gethostname(host,sizeof(host)-1) == 0 )
+        {
+          /* this strndup is an intentional one-time memory leak. */
+          arg_mondemand_host = strndup(host,sizeof(host)-1);
+        }
+      else
+        {
+          LOG_WARN("Mondemand requires a hostname, but none was provided or"
+                   " available.  Disabling mondemand.");
+          arg_mondemand_ip = NULL;
+        }
+    }
+
   if (      arg_journalls == NULL
        || ! arg_journalls[0]
        || ! strrchr(arg_journalls[0],'/') )
