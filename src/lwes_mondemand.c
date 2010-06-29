@@ -6,17 +6,14 @@
 
 struct mondemand_client *client;
 #define mondemand_inc(x) mondemand_increment_key_by_val(client, #x, stats->x)
-#define MONDEMAND_LABEL_MAX_LENGTH 100
 
 static void init()
 {
-  if (client==NULL && arg_mondemand_label!=NULL && arg_mondemand_ip!=NULL)
+  if (client==NULL && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
     {
-      char label[MONDEMAND_LABEL_MAX_LENGTH+1];
       struct mondemand_transport *transport = NULL;
-      strncpy(label, "lwes-journaller-",  MONDEMAND_LABEL_MAX_LENGTH);
-      strncat(label, arg_mondemand_label, MONDEMAND_LABEL_MAX_LENGTH);
-      client = mondemand_client_create(label);
+      client = mondemand_client_create("lwes-journaller");
+      mondemand_set_context(client,"host",arg_mondemand_host);
       transport = mondemand_transport_lwes_create(arg_mondemand_ip,arg_mondemand_port,NULL,0,0);
       if (transport)
         {
