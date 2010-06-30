@@ -83,12 +83,18 @@ static void set_max_msg_size (size_t max_sz)
       return;
     }
 
-  fscanf (fp, "%ld", &old_max);
-
-  if ( max_sz > old_max ) {
+  if ( fscanf (fp, "%ld", &old_max) != 1 )
+    {
+      LOG_WARN("Unable to read old max_msg_size.\n");
+    }
+  else if ( max_sz > old_max )
+    {
       rewind (fp);
-      fprintf (fp, "%ld", max_sz);
-  }
+      if ( fprintf (fp, "%ld", max_sz) < 0 )
+        {
+          LOG_WARN("Unable to set max_msg_size to %ld.\n", max_sz);
+        }
+    }
 
   fclose (fp);
 }
