@@ -390,7 +390,7 @@ static void daemonize()
   umask(0);
   if ( chdir(chdir_root) < 0)
     {
-      PERROR("Unable to chdir(\"%s\")", chdir_root);
+      LOG_ER("Unable to chdir(\"%s\"): %s\n", chdir_root, strerror(errno));
       exit(EXIT_FAILURE);
     }
 
@@ -403,8 +403,16 @@ static void daemonize()
 
   /* Open 0, 1 and 2. */
   open("/dev/null", O_RDWR);
-  (void) dup(0);
-  (void) dup(0);
+  if ( dup(0) != 1 )
+    {
+      PERROR("Unable to dup() to replace stdout: %s\n");
+      exit(EXIT_FAILURE);
+    }
+  if ( dup(0) != 2 )
+    {
+      PERROR("Unable to dup() to replace stderr: %s\n");
+      exit(EXIT_FAILURE);
+    }
 }
 
 
