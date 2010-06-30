@@ -377,6 +377,7 @@ static void do_fork()
 static void daemonize()
 {
   int fd, fdlimit;
+  const char *chdir_root = "/";
 
   do_fork();
   if ( setsid() < 0 )
@@ -387,7 +388,11 @@ static void daemonize()
   do_fork();
 
   umask(0);
-  chdir("/");
+  if ( chdir(chdir_root) < 0)
+    {
+      PERROR("Unable to chdir(\"%s\")", chdir_root);
+      exit(EXIT_FAILURE);
+    }
 
   /* Close all open files. */
   fdlimit = sysconf (_SC_OPEN_MAX);
@@ -398,8 +403,8 @@ static void daemonize()
 
   /* Open 0, 1 and 2. */
   open("/dev/null", O_RDWR);
-  dup(0);
-  dup(0);
+  (void) dup(0);
+  (void) dup(0);
 }
 
 
