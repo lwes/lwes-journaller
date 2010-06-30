@@ -53,9 +53,6 @@ const char*  arg_queue_name    = "/lwes_journal";
 int          arg_queue_max_sz  = 64*1024 - 1;
 int          arg_queue_max_cnt = 10000;
 int          arg_join_group;
-char*        arg_sink_ram      = NULL ;
-char         nam_sink_ram[500] ; /* holds real /sink/ram/all_events.log.gz
-                                  * filename */
 
 #if HAVE_LIBZ
 const char*  arg_journ_type    = ARG_GZ;
@@ -151,7 +148,6 @@ void process_options(int argc, const char* argv[])
     { "queue-type",   'q', POPT_ARG_STRING, &arg_queue_type,     0, "Queue type", "{" ARG_MSG "," ARG_MQ "}" },
     { "rotate-mask",  'd', POPT_ARG_INT,    &arg_rotate_mask,    0, "Rotate mask, dflt=30", "seconds" },
     { "real-time",    'R', POPT_ARG_NONE,   &arg_rt,             0, "Run threads with real-time priority", 0 },
-    { "sink-ram",     'z', POPT_ARG_STRING, &arg_sink_ram,       0, "/sink/ram/", "NULL" },
     { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },
     { "ttl",           0,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
@@ -213,27 +209,6 @@ void process_options(int argc, const char* argv[])
                                                      NULL };
       arg_journalls = (char**) default_arg_journalls;
       arg_njournalls = 1;
-    }
-
-  if ( arg_sink_ram != NULL )
-    {
-      strcpy(nam_sink_ram, arg_sink_ram) ;
-      if ( nam_sink_ram[strlen(nam_sink_ram)-1] != '/' )
-        {
-          strcat(nam_sink_ram, "/") ;
-        }
-      strcat(nam_sink_ram, strrchr(arg_journalls[0],'/') + 1) ;
-
-      arg_disk_journals[arg_njournalls] = NULL ;
-      while ( --arg_njournalls >= 0 )
-        {
-          /* copy original arg_journalls to arg_disk_journals */
-          arg_disk_journals[arg_njournalls] = arg_journalls[arg_njournalls] ;
-        }
-
-      arg_journalls[0] = nam_sink_ram ;
-      arg_journalls[1] = NULL ;
-      arg_njournalls = 1 ;
     }
 
   /* convert the journal file username to a uid */
@@ -337,7 +312,6 @@ void process_options(int argc, const char* argv[])
               "  arg_queue_max_cnt == %d\n"
               "  arg_queue_max_sz == %d\n"
               "  arg_rt == %d\n"
-              "  arg_sink_ram == %s\n"
               "  arg_site == %d\n"
               "  arg_ttl == %d\n"
               "  arg_journal_user == %s\n"
@@ -364,7 +338,6 @@ void process_options(int argc, const char* argv[])
               arg_queue_max_cnt,
               arg_queue_max_sz,
               arg_rt,
-              arg_sink_ram,
               arg_site,
               arg_ttl,
               arg_journal_user,

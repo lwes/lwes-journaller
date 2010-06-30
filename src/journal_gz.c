@@ -119,29 +119,14 @@ static int xopen(struct journal* this_journal, int flags)
           long bsize = (stfsbuf.f_bsize!=0) ? stfsbuf.f_bsize : 4096 ;
           long lsz = ppriv->nbytes_written / bsize ;
 
-          if ( ! arg_sink_ram )
-            { /* -sink-ram has different boundary conditions */
-              if ( lsz > (abs(stfsbuf.f_bavail) / 2.) )
-                {
-                  LOG_WARN("Low on disk space for new gz log %s.\n",
-                           ppriv->path);
-                  LOG_WARN("Available space is %d blocks of %d bytes each.\n",
-                           stfsbuf.f_bavail, bsize);
-                  LOG_WARN("Last log file contained %lld bytes.\n",
-                           ppriv->nbytes_written);
-                }
-            }
-          else /* test boundaries of /sink/ram */
+          if ( lsz > (abs(stfsbuf.f_bavail) / 2.) )
             {
-              if ( lsz > stfsbuf.f_bavail / 2. )
-                {
-                  long long avail_bytes = stfsbuf.f_bavail * 4096 ;
-                  LOG_WARN("Low on %s space for new gz log %s.\n",
-                           arg_sink_ram, ppriv->path);
-                  LOG_WARN("Available space is %d bytes.\n", avail_bytes);
-                  LOG_WARN("Last log file contained %lld bytes.\n",
-                           ppriv->nbytes_written);
-                }
+              LOG_WARN("Low on disk space for new gz log %s.\n",
+                       ppriv->path);
+              LOG_WARN("Available space is %d blocks of %d bytes each.\n",
+                       stfsbuf.f_bavail, bsize);
+              LOG_WARN("Last log file contained %lld bytes.\n",
+                       ppriv->nbytes_written);
             }
         }
     }

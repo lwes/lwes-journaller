@@ -47,7 +47,6 @@ extern const char*    arg_queue_name;
 extern const char*    arg_queue_type;
 extern int            arg_rotate_mask;
 extern int            arg_rt;
-extern char*          arg_sink_ram;
 extern int            arg_site;
 extern int            arg_sockbuffer;
 extern int            arg_ttl;

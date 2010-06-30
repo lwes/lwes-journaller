@@ -54,8 +54,6 @@ void* queue_to_journal(void* arg)
   time_t last_rotate = 0 ; //time(NULL);
   time_t this_rotate ;
 
-  int sink_ram_count = 0 ;
-  time_t sink_rotate = 0 ; // latest sink rotate
   (void)arg; /* appease -Wall -Werror */
 
   stats_ctor(&st);
@@ -131,41 +129,7 @@ void* queue_to_journal(void* arg)
             }
 
           gbl_rotate = 0;
-
-          sink_rotate = time(NULL) ;
-          sink_ram_count = 0 ;
         } // </gbl_rotate>
-      else if ( arg_sink_ram != NULL ) /* perhaps /sink/ram ? */
-        {
-          /* time to rotate sink-ram ? */
-          if ( sink_ram_count++ >= 10000 )
-            {
-              /* was last rotate in this second? */
-              if ( time(NULL) == sink_rotate )
-                {
-                  /* then we'll wait a bit before rotate_sink_ram() */
-                  sink_ram_count = 9000 ;
-                }
-              else
-                {
-                  if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
-                    {
-                      LOG_ER("Can't close sink-ram journal  \"%s\".\n",
-                             arg_journalls[jcurr]);
-                      exit(EXIT_FAILURE);
-                    }
-                  jcurr = (jcurr + 1) % arg_njournalls;
-                  if ( jrn[jcurr].vtbl->open(&jrn[jcurr], O_WRONLY) < 0 )
-                    {
-                      LOG_ER("Failed to open sink-ram journal \"%s\".\n",
-                             arg_journalls[jcurr]);
-                      exit(EXIT_FAILURE);
-                    }
-                  sink_rotate = time(NULL) ;
-                  sink_ram_count = 0 ;
-                }
-            }
-        }
 
       if ( (que_read_ret = que.vtbl->read(&que, buf, bufsiz, &pending)) < 0 )
         {
