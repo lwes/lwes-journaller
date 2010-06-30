@@ -35,8 +35,7 @@ commonsource = \
 								xport_to_queue.c \
 								xport_udp.c \
 								stats.c \
-								rename_journal.c \
-								peer.c
+								rename_journal.c
 
 journallersource = \
 								lwes-journaller.c

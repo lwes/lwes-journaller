@@ -25,7 +25,6 @@
 #include "journal.h"
 #include "log.h"
 #include "opt.h"
-#include "peer.h"
 #include "queue.h"
 #include "sig.h"
 #include "stats.h"
@@ -163,8 +162,6 @@ void* queue_to_journal(void* arg)
                 memcpy(&st.latest_rotate_header, buf, HEADER_LENGTH) ;
                 gbl_rotate = 1;
 
-                peer_correlate(buf, que_read_ret);
-                //TODO: ?what did they mean by this? gdw.2006.11.28
                 // fall through to write this Command::Rotate out before
                 // looping to actually rotate.
               }
