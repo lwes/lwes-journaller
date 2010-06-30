@@ -21,12 +21,13 @@
 
 #include "log.h"
 #include "opt.h"
-#include <string.h>
 
 #if HAVE_LIBGEN_H
 #include <libgen.h>
 #endif
 
+#define _GNU_SOURCE
+#include <string.h>
 #include <popt.h>
 #include <stdlib.h>
 #include <unistd.h>
