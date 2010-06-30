@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor,                   *
  * Boston, MA 02110-1301 USA.                                           *
  *======================================================================*/
+#define _GNU_SOURCE
 #include "config.h"
 
 #include "log.h"
@@ -26,7 +27,6 @@
 #include <libgen.h>
 #endif
 
-#define _GNU_SOURCE
 #include <string.h>
 #include <popt.h>
 #include <stdlib.h>
