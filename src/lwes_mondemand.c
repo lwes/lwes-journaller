@@ -77,10 +77,16 @@ void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const 
 
 void mondemand_stats (const struct stats* stats, time_t now)
 {
+  (void)stats;
+  (void)now;
 }
 
 void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf)
 {
+  (void)level;
+  (void)fname;
+  (void)lineno;
+  (void)buf;
 }
 
 #endif /* HAVE_MONDEMAND */
