@@ -354,6 +354,7 @@ void process_options(int argc, const char* argv[])
       exit(EXIT_SUCCESS);
     }
 
+#ifdef HAVE_MONDEMAND
   if (    arg_mondemand_host == NULL
        && arg_mondemand_ip   != NULL )
     {
@@ -371,6 +372,7 @@ void process_options(int argc, const char* argv[])
           arg_mondemand_ip = NULL;
         }
     }
+#endif 
 
   if (      arg_journalls == NULL
        || ! arg_journalls[0]
