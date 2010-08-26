@@ -142,7 +142,7 @@ void dequeuer_stats_record_loss (struct dequeuer_stats* st)
 }
 
 
-static void log_rates(log_mask_t level, const char* file, int line, long long bps, long long pps,
+static void log_rates(log_mask_t level, const char* file, int line, double bps, double pps,
                       const char* notes)
 {
   if ( bps > 1000000. )
