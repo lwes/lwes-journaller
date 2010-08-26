@@ -26,23 +26,36 @@ static void init()
     }
 }
 
-void mondemand_stats (const struct stats* stats, time_t now)
+void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
 {
   init();
   if (client==NULL) return;
-  mondemand_inc(loss);
-  mondemand_inc(bytes_total);
-  mondemand_inc(bytes_since_last_rotate);
-  mondemand_inc(packets_total);
-  mondemand_inc(packets_since_last_rotate);
-  mondemand_inc(bytes_in_burst);
-  mondemand_inc(packets_in_burst);
+  mondemand_inc(socket_errors_since_last_rotate);
+  mondemand_inc(bytes_received_total);
+  mondemand_inc(bytes_received_since_last_rotate);
+  mondemand_inc(packets_received_total);
+  mondemand_inc(packets_received_since_last_rotate);
+  mondemand_increment_key_by_val(client, "rotate", now);
+  mondemand_flush_stats(client);
+}
+
+void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
+{
+  init();
+  if (client==NULL) return;
+  mondemand_inc(loss_since_last_rotate);
+  mondemand_inc(bytes_written_total);
+  mondemand_inc(bytes_written_since_last_rotate);
+  mondemand_inc(packets_written_total);
+  mondemand_inc(packets_written_since_last_rotate);
+  mondemand_inc(bytes_written_in_burst);
+  mondemand_inc(packets_written_in_burst);
   mondemand_inc(hiq);
   mondemand_inc(hiq_start);
   mondemand_inc(hiq_last);
   mondemand_inc(hiq_since_last_rotate);
-  mondemand_inc(bytes_in_burst_since_last_rotate);
-  mondemand_inc(packets_in_burst_since_last_rotate);
+  mondemand_inc(bytes_written_in_burst_since_last_rotate);
+  mondemand_inc(packets_written_in_burst_since_last_rotate);
   mondemand_inc(start_time);
   mondemand_inc(last_rotate);
   mondemand_increment_key_by_val(client, "rotate", now);

@@ -23,26 +23,21 @@
 
 #include "log.h"
 #include "opt.h"
-#include "perror.h"
 #include "stats.h"
 
 #include "lwes.h"
 #include "marshal.h"
 
+#include <sys/socket.h>
 #include <netinet/in.h>
-#include <sys/time.h>
+#include <arpa/inet.h>
+
+#define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
 
 void header_add(void* buf, int count, unsigned long addr, unsigned short port)
 {
-  unsigned char* cp = (unsigned char*)buf;
-
-  struct timeval t;
-  unsigned long long tm;
-
-  if ( -1 == gettimeofday(&t, 0) ) /* This is where we need to */
-    PERROR("gettimeofday"); /*  timestamp the packet. */
-
-  tm = ((((long long)t.tv_sec) * 1000LL) + (long long)(t.tv_usec/1000));
+  unsigned char*     cp = (unsigned char*)buf;
+  unsigned long long tm = time_in_milliseconds();
 
   marshal_short(cp, count);    /* Size of message body. */
   marshal_ulong_long(cp, tm);  /* Now in msec. */
@@ -217,6 +212,50 @@ ping (void* buf, size_t bufsiz)
 
   /* we're done */
   return 0;
+}
+
+void header_print (const char* buf)
+{
+  LOG_INF("header payload length: %u\n",   header_payload_length(buf));
+  LOG_INF("receipt time:          %llu\n", header_receipt_time(buf));
+  LOG_INF("now:                   %llu\n", time(NULL)*1000L);
+  LOG_INF("sender IP text:        %s\n",   header_sender_ip_formatted(buf));
+  LOG_INF("sender port:           %u\n",   header_sender_port(buf));
+  LOG_INF("site id:               %u\n",   header_site_id(buf));
+}
+
+static uint16_t header_uint16(const char* bytes) {
+  return ntohs(*((uint16_t*) bytes));
+}
+
+static uint32_t header_uint32(const char* bytes) {
+  return ntohl(*((uint32_t*) bytes));
+}
+
+static uint64_t header_uint64(const char* bytes) {
+  return (((uint64_t)header_uint32(bytes))<<32) | header_uint32(bytes+4);
+}
+
+uint16_t header_payload_length(const char* header)
+{
+  return header_uint16(header);
+}
+
+uint64_t header_receipt_time(const char* header) {
+  return header_uint64(header+RECEIPT_TIME_OFFSET);
+}
+
+const char* header_sender_ip_formatted(const char* header) {
+  struct in_addr addr = { header_uint32(header+SENDER_IP_OFFSET) };
+  return inet_ntoa(addr);
+}
+
+uint16_t header_sender_port(const char* header) {
+  return header_uint16(header+SENDER_PORT_OFFSET);
+}
+
+uint16_t header_site_id(const char* header) {
+  return header_uint16(header+SITE_ID_OFFSET);
 }
 
 /* end-of-file */

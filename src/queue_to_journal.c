@@ -38,7 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
-struct stats st ;
+struct dequeuer_stats dst ;
 
 void* queue_to_journal(void* arg)
 {
@@ -50,12 +50,12 @@ void* queue_to_journal(void* arg)
   size_t bufsiz;
   int pending ;
 
-  time_t last_rotate = 0 ; //time(NULL);
+  time_t last_rotate = time(NULL);
   time_t this_rotate ;
 
   (void)arg; /* appease -Wall -Werror */
 
-  stats_ctor(&st);
+  dequeuer_stats_ctor(&dst);
 
   install_signal_handlers();
   install_rotate_signal_handlers(); /* This is the process or thread
@@ -112,7 +112,7 @@ void* queue_to_journal(void* arg)
 
           LOG_PROG("About to rotate journal.\n");
 
-          stats_rotate(&st);
+          dequeuer_stats_rotate(&dst);
           if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
             {
               LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);
@@ -159,7 +159,7 @@ void* queue_to_journal(void* arg)
                   }
 
                 last_rotate = this_rotate ;
-                memcpy(&st.latest_rotate_header, buf, HEADER_LENGTH) ;
+                memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
                 gbl_rotate = 1;
 
                 // fall through to write this Command::Rotate out before
@@ -168,7 +168,7 @@ void* queue_to_journal(void* arg)
 
           default:
 fallthru:
-            stats_record(&st, que_read_ret, pending);
+            dequeuer_stats_record(&dst, que_read_ret-HEADER_LENGTH, pending);
             /* Write the packet out to the journal. */
             if ( (jrn_write_ret = jrn[jcurr].vtbl->write(&jrn[jcurr],
                                                          buf, que_read_ret)) 
@@ -176,12 +176,12 @@ fallthru:
               {
                 LOG_ER("Journal write error -- attempted to write %d bytes, "
                        "write returned %d.\n", que_read_ret, jrn_write_ret);
-                stats_record_loss(&st);
+                dequeuer_stats_record_loss(&dst);
               }
         }
     } /* while ( ! gdb_done) */
 
-  stats_rotate(&st);
+  dequeuer_stats_rotate(&dst);
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
       LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);
@@ -200,7 +200,7 @@ fallthru:
   que.vtbl->dealloc(&que, buf);
   que.vtbl->destructor(&que);
 
-  stats_report(&st);
+  dequeuer_stats_report(&dst);
 
   return 0;
 }

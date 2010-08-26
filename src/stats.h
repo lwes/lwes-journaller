@@ -24,17 +24,30 @@
 #include <time.h>
 #include "header.h"
 
-struct stats {
-  long long loss;
+struct enqueuer_stats {
+  long long socket_errors_since_last_rotate;
+  
+  long long bytes_received_total;
+  long long bytes_received_since_last_rotate;
 
-  long long bytes_total;
-  long long bytes_since_last_rotate;
+  long long packets_received_total;
+  long long packets_received_since_last_rotate;
 
-  long long packets_total;
-  long long packets_since_last_rotate;
+  time_t start_time;
+  time_t last_rotate;
+};
 
-  long long bytes_in_burst;
-  long long packets_in_burst;
+struct dequeuer_stats {
+  long long loss_since_last_rotate;
+
+  long long bytes_written_total;
+  long long bytes_written_since_last_rotate;
+
+  long long packets_written_total;
+  long long packets_written_since_last_rotate;
+
+  long long bytes_written_in_burst;
+  long long packets_written_in_burst;
 
   int hiq;                      /* Peak packet count in queue. */
 
@@ -43,20 +56,28 @@ struct stats {
 
   int hiq_since_last_rotate;    /* Highest high water mark since last rotate. */
 
-  long long bytes_in_burst_since_last_rotate;
-  long long packets_in_burst_since_last_rotate;
+  long long bytes_written_in_burst_since_last_rotate;
+  long long packets_written_in_burst_since_last_rotate;
 
   time_t start_time;
   time_t last_rotate;
 
-  struct event_header latest_rotate_header ; /* Of the Command::Rotate that was acted on */
+  char latest_rotate_header[HEADER_LENGTH] ; /* Of the Command::Rotate that was acted on */
 };
 
-int stats_ctor (struct stats* this_stats);
-void stats_record (struct stats* this_stats, int bytes, int pending);
-void stats_rotate (struct stats* this_stats);
-void stats_record_loss (struct stats* this_stats);
-void stats_report (struct stats* this_stats);
-extern struct stats st ;
+unsigned long long time_in_milliseconds (void);
+
+int enqueuer_stats_ctor (struct enqueuer_stats* this_stats);
+void stats_enqueuer_rotate (struct enqueuer_stats* this_stats);
+void enqueuer_stats_record_socket_error (struct enqueuer_stats* this_stats);
+void enqueuer_stats_record_datagram (struct enqueuer_stats* this_stats, int bytes);
+void enqueuer_stats_rotate (struct enqueuer_stats* this_stats);
+void enqueuer_stats_report (struct enqueuer_stats* this_stats);
+
+int dequeuer_stats_ctor (struct dequeuer_stats* this_stats);
+void dequeuer_stats_record (struct dequeuer_stats* this_stats, int bytes, int pending);
+void dequeuer_stats_record_loss (struct dequeuer_stats* this_stats);
+void dequeuer_stats_rotate (struct dequeuer_stats* this_stats);
+void dequeuer_stats_report (struct dequeuer_stats* this_stats);
 
 #endif /* STATS_DOT_H */

@@ -27,9 +27,11 @@
 #include "opt.h"
 #include "sig.h"
 #include "marshal.h"
+#include "perror.h"
 #include "lwes_mondemand.h"
 
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 
 /* To rid us of gcc warnings, see the strftime(3) man page on Linux
@@ -41,7 +43,27 @@ static size_t my_strftime (char* s, size_t max, const char* fmt,
   return strftime (s, max, fmt, tm);
 }
 
-int stats_ctor (struct stats* st)
+unsigned long long time_in_milliseconds ()
+{
+  struct timeval t;
+
+  if ( -1 == gettimeofday(&t, 0) ) /* This is where we need to */
+    PERROR("gettimeofday"); /*  timestamp the packet. */
+
+  return (((long long)t.tv_sec) * 1000LL) + (long long)(t.tv_usec/1000);
+}
+
+int enqueuer_stats_ctor (struct enqueuer_stats* st)
+{
+  memset (st, 0, sizeof(*st));
+
+  st->start_time = time (NULL);
+  st->last_rotate = st->start_time;
+
+  return 0;
+}
+
+int dequeuer_stats_ctor (struct dequeuer_stats* st)
 {
   memset (st, 0, sizeof(*st));
 
@@ -52,21 +74,29 @@ int stats_ctor (struct stats* st)
   return 0;
 }
 
-void stats_record_loss (struct stats* st)
+void enqueuer_stats_record_socket_error (struct enqueuer_stats* st)
 {
-  st->loss += 1;
+  ++st->socket_errors_since_last_rotate;
 }
 
-void stats_record (struct stats* st, int bytes, int pending)
+void enqueuer_stats_record_datagram (struct enqueuer_stats* st, int bytes)
+{
+  st->bytes_received_since_last_rotate += bytes;
+  st->bytes_received_total             += bytes;
+  ++st->packets_received_since_last_rotate;
+  ++st->packets_received_total;
+}
+
+void dequeuer_stats_record (struct dequeuer_stats* st, int bytes, int pending)
 {
   /* Collect some stats.  All byte counts represent the bytes used
      in the original packets, not with the headers applied. */
 
-  st->bytes_since_last_rotate += bytes - HEADER_LENGTH;
-  st->bytes_total += bytes - HEADER_LENGTH;
+  st->bytes_written_since_last_rotate += bytes;
+  st->bytes_written_total             += bytes;
 
-  ++st->packets_since_last_rotate;
-  ++st->packets_total;
+  ++st->packets_written_since_last_rotate;
+  ++st->packets_written_total;
 
   /* No pending packets in queue. */
   if ( 0 == pending )
@@ -74,12 +104,12 @@ void stats_record (struct stats* st, int bytes, int pending)
       if ( st->hiq )
         {
           /* We just grabbed that last packet of a burst. */
-          st->bytes_in_burst_since_last_rotate = st->bytes_in_burst;
-          st->packets_in_burst_since_last_rotate = st->packets_in_burst;
+          st->bytes_written_in_burst_since_last_rotate = st->bytes_written_in_burst;
+          st->packets_written_in_burst_since_last_rotate = st->packets_written_in_burst;
 
           st->hiq = 0;
-          st->bytes_in_burst = 0;
-          st->packets_in_burst = 0;
+          st->bytes_written_in_burst = 0;
+          st->packets_written_in_burst = 0;
         }
     }
   else  /* In a burst. */
@@ -96,8 +126,8 @@ void stats_record (struct stats* st, int bytes, int pending)
           st->hiq = pending;
         }
 
-      st->bytes_in_burst += bytes - HEADER_LENGTH;
-      st->packets_in_burst += 1;
+      st->bytes_written_in_burst += bytes;
+      st->packets_written_in_burst += 1;
     }
 
   if ( st->hiq > st->hiq_since_last_rotate )
@@ -106,76 +136,122 @@ void stats_record (struct stats* st, int bytes, int pending)
     }
 }
 
-void stats_rotate(struct stats* st)
+void dequeuer_stats_record_loss (struct dequeuer_stats* st)
 {
-  double bps, pps;
+  st->loss_since_last_rotate += 1;
+}
 
-  time_t now = time(NULL);
-  time_t uptime;
-  unsigned char* cp = (unsigned char*)&st->latest_rotate_header.sender_ip;
-  cp -= 2 ; //FIXME: wtf!
 
-  if ( st->loss )
-    {
-      LOG_ER("*** %lld packets lost in this journal ***\n",
-             st->loss);
-    }
-
-  LOG_INF("Network traffic since last rotate:\n");
-  LOG_INF("%lld bytes, %lld packets in this journal.\n",
-          st->bytes_since_last_rotate,
-          st->packets_since_last_rotate);
-
-  uptime = now - st->last_rotate;
-
-  bps = (8. * (double)st->bytes_since_last_rotate) / (double)uptime;
-  pps = ((double)st->packets_since_last_rotate) / (double)uptime;
-
+static void log_rates(log_mask_t level, const char* file, int line, long long bps, long long pps)
+{
   if ( bps > 1000000. )
     {
-      LOG_INF(" %g mbps, %g pps.\n", bps / 1000000., pps);
+      log_msg(level, file, line, " %g mbps, %g pps.\n", bps / 1000000., pps);
     }
   else if ( bps > 1000. )
     {
-      LOG_INF(" %g kbps, %g pps.\n", bps / 1000., pps);
+      log_msg(level, file, line, " %g kbps, %g pps.\n", bps / 1000., pps);
     }
   else
     {
-      LOG_INF(" %g bps, %g pps.\n", bps, pps);
+      log_msg(level, file, line, " %g bps, %g pps.\n", bps, pps);
     }
+}
+
+void enqueuer_stats_rotate(struct enqueuer_stats* st)
+{
+  double rbps, rpps;
+
+  time_t now = time(NULL);
+  time_t uptime;
+
+  if ( st->socket_errors_since_last_rotate )
+    {
+      LOG_ER("*** %lld packets had socket errors in this journal ***\n",
+             st->socket_errors_since_last_rotate);
+    }
+
+  LOG_INF("Socket read errors since last rotate: %lld\n",
+          st->socket_errors_since_last_rotate);
+
+  LOG_INF("Events read since last rotate:\n");
+  LOG_INF(" %lld bytes, %lld packets in this journal.\n",
+          st->bytes_received_since_last_rotate,
+          st->packets_received_since_last_rotate);
+
+  uptime = now - st->last_rotate;
+
+  rbps = (8. * (double)st->bytes_received_since_last_rotate) / (double)uptime;
+  rpps = ((double)st->packets_received_since_last_rotate) / (double)uptime;
+
+  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps);
+
+  st->socket_errors_since_last_rotate = 0LL;
+  st->bytes_received_since_last_rotate = 0LL;
+  st->packets_received_since_last_rotate = 0LL;
+  st->last_rotate = now;
+
+  LOG_INF("Enqueuer stats summary v2:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\n",
+          now, st->socket_errors_since_last_rotate,
+          st->bytes_received_total, st->bytes_received_since_last_rotate,
+          st->packets_received_total, st->packets_received_since_last_rotate,
+          uptime);
+
+  mondemand_enqueuer_stats(st,now);
+}
+
+void dequeuer_stats_rotate(struct dequeuer_stats* st)
+{
+  double wbps, wpps;
+
+  time_t now = time(NULL);
+  time_t uptime;
+
+  if ( st->loss_since_last_rotate )
+    {
+      LOG_ER("*** %lld packets lost in this journal ***\n",
+             st->loss_since_last_rotate);
+    }
+
+  uptime = now - st->last_rotate;
+
+  wbps = (8. * (double)st->bytes_written_since_last_rotate) / (double)uptime;
+  wpps = ((double)st->packets_written_since_last_rotate) / (double)uptime;
+
+  log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps);
 
   LOG_INF("Highest queue utilization since last rotate: %d packets.\n",
           st->hiq_since_last_rotate);
   LOG_INF("Highest burst since last rotate: %lli packets, %lli bytes.\n",
-          st->packets_in_burst_since_last_rotate,
-          st->bytes_in_burst_since_last_rotate);
+          st->packets_written_in_burst_since_last_rotate,
+          st->bytes_written_in_burst_since_last_rotate);
 
-  //TODO: it's *impossible* to get the sender_ip via unmarshal_any_f'ng_thing!
-  //LOG_INF("Command::Rotate received from IP %s", inet_ntoa(inaddr)) ;
-  LOG_INF("Command::Rotate received from IP %u.%u.%u.%u\n",
-          cp[3], cp[2], cp[1], cp[0]) ;
+  LOG_INF("Command::Rotate from IP %s traversed the queue in %ld ms\n",
+          header_sender_ip_formatted(st->latest_rotate_header),
+          time_in_milliseconds()-header_receipt_time(st->latest_rotate_header));
 
-  st->bytes_since_last_rotate = 0LL;
-  st->packets_since_last_rotate = 0LL;
+  st->bytes_written_since_last_rotate = 0LL;
+  st->packets_written_since_last_rotate = 0LL;
   st->hiq_since_last_rotate = 0;
-  st->packets_in_burst_since_last_rotate = st->bytes_in_burst_since_last_rotate = 0LL ;
-  st->loss = 0LL;
+  st->packets_written_in_burst_since_last_rotate = st->bytes_written_in_burst_since_last_rotate = 0LL ;
+  st->loss_since_last_rotate = 0LL;
   st->last_rotate = now;
 
-  LOG_INF("Stats summary v1:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\t%d\t%d\t%d\t%lld\t%lld\t%d\n",
-          now, st->loss, st->bytes_total, st->bytes_since_last_rotate,
-          st->packets_total, st->packets_since_last_rotate,
-          st->bytes_in_burst, st->packets_in_burst, st->hiq,
+  LOG_INF("Dequeuer stats summary v2:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\t%d\t%d\t%d\t%lld\t%lld\t%d\n",
+          now, st->loss_since_last_rotate,
+          st->bytes_written_total, st->bytes_written_since_last_rotate,
+          st->packets_written_total, st->packets_written_since_last_rotate,
+          st->bytes_written_in_burst, st->packets_written_in_burst, st->hiq,
           st->hiq_start, st->hiq_last, st->hiq_since_last_rotate,
-          st->bytes_in_burst_since_last_rotate,
-          st->packets_in_burst_since_last_rotate, uptime);
+          st->bytes_written_in_burst_since_last_rotate,
+          st->packets_written_in_burst_since_last_rotate, uptime);
 
-  mondemand_stats(st,now);
+  mondemand_dequeuer_stats(st,now);
 }
 
-void stats_report(struct stats* st)
+void enqueuer_stats_report(struct enqueuer_stats* st)
 {
-  double bps, pps;
+  double rbps, rpps;
   char startbfr[100];
   char nowbfr[100];
 
@@ -198,24 +274,47 @@ void stats_report(struct stats* st)
 
   uptime = now - st->start_time;
 
-  bps = (8. * (double)st->bytes_total) / (double)uptime;
-  pps = ((double)st->packets_total) / (double)uptime;
+  rbps = (8. * (double)st->bytes_received_total) / (double)uptime;
+  rpps = ((double)st->packets_received_total) / (double)uptime;
 
-  LOG_INF("Total network traffic:\n");
+  LOG_INF("Total network traffic received:\n");
   LOG_INF(" %lld bytes, %lld packets.\n",
-          st->bytes_total,
-          st->packets_total);
+          st->bytes_received_total,
+          st->packets_received_total);
+  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps);
+}
 
-  if ( bps > 1000000. )
+void dequeuer_stats_report(struct dequeuer_stats* st)
+{
+  double wbps, wpps;
+  char startbfr[100];
+  char nowbfr[100];
+
+  struct tm tm_st;
+
+  time_t now = time(NULL);
+  time_t uptime;
+
+  if ( my_strftime(startbfr, sizeof(startbfr),
+                   "%c", localtime_r(&st->start_time, &tm_st)) == 0 )
     {
-      LOG_INF(" %g mbps, %g pps.\n", bps / 1000000., pps);
+      LOG_ER("strftime failure");
     }
-  else if ( bps > 1000. )
+
+  if ( my_strftime(nowbfr, sizeof(nowbfr),
+                   "%c", localtime_r(&now, &tm_st)) == 0 )
     {
-      LOG_INF(" %g kbps, %g pps.\n", bps / 1000., pps);
+      LOG_ER("strftime failure");
     }
-  else
-    {
-      LOG_INF(" %g bps, %g pps.\n", bps, pps);
-    }
+
+  uptime = now - st->start_time;
+
+  wbps = (8. * (double)st->bytes_written_total) / (double)uptime;
+  wpps = ((double)st->packets_written_total) / (double)uptime;
+
+  LOG_INF("Total network traffic recorded:\n");
+  LOG_INF(" %lld bytes, %lld packets.\n",
+          st->bytes_written_total,
+          st->packets_written_total);
+  log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps);
 }

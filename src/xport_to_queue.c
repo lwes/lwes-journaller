@@ -37,10 +37,15 @@
 
 static void skd(void);
 
+struct enqueuer_stats est ;
+
 void* xport_to_queue(void* arg)
 {
   struct xport xpt;
   struct queue que;
+
+  time_t last_rotate = time(NULL);
+  time_t this_rotate ;
 
   unsigned char* buf = 0;
   size_t bufsiz;
@@ -92,8 +97,11 @@ void* xport_to_queue(void* arg)
                                           &addr, &port)) < 0 )
         {
           ++read_errors;
+          enqueuer_stats_record_socket_error(&est);
           continue;
         }
+
+      enqueuer_stats_record_datagram(&est,xpt_read_ret);
 
       /* Return info about packet read. */
       LOG_PROG("Read %d bytes\n", xpt_read_ret);
@@ -105,6 +113,16 @@ void* xport_to_queue(void* arg)
       read_errors = 0;
 
       header_add(buf, xpt_read_ret, addr, port);
+
+      if ( header_is_rotate (buf, &this_rotate) == 1 )
+        { // Command::Rotate: is it a new enough Command::Rotate, or masked out?
+          time_t since = this_rotate - last_rotate;
+          if ( since >= arg_rotate_mask )
+            {
+              enqueuer_stats_rotate(&est);
+              last_rotate = this_rotate;
+            }
+        }
 
       if ( (que_write_ret = que.vtbl->write(&que,
                                             buf,
@@ -124,6 +142,8 @@ void* xport_to_queue(void* arg)
 
   xpt.vtbl->destructor(&xpt);
   que.vtbl->destructor(&que);
+
+  enqueuer_stats_report(&est);
 
   return 0;
 }

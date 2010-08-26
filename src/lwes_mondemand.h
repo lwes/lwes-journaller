@@ -28,7 +28,8 @@
 #include <mondemand.h>
 #endif
 
-void mondemand_stats (const struct stats* this_stats, time_t now);
+void mondemand_enqueuer_stats (const struct enqueuer_stats* this_stats, time_t now);
+void mondemand_dequeuer_stats (const struct dequeuer_stats* this_stats, time_t now);
 void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf);
 
 #endif
