@@ -281,7 +281,7 @@ void enqueuer_stats_report(struct enqueuer_stats* st)
   LOG_INF(" %lld bytes, %lld packets.\n",
           st->bytes_received_total,
           st->packets_received_total);
-  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps);
+  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps," received");
 }
 
 void dequeuer_stats_report(struct dequeuer_stats* st)
@@ -316,5 +316,5 @@ void dequeuer_stats_report(struct dequeuer_stats* st)
   LOG_INF(" %lld bytes, %lld packets.\n",
           st->bytes_written_total,
           st->packets_written_total);
-  log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps);
+  log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps," written");
 }
