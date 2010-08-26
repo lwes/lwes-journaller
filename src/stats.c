@@ -142,19 +142,20 @@ void dequeuer_stats_record_loss (struct dequeuer_stats* st)
 }
 
 
-static void log_rates(log_mask_t level, const char* file, int line, long long bps, long long pps)
+static void log_rates(log_mask_t level, const char* file, int line, long long bps, long long pps,
+                      const char* notes)
 {
   if ( bps > 1000000. )
     {
-      log_msg(level, file, line, " %g mbps, %g pps.\n", bps / 1000000., pps);
+      log_msg(level, file, line, " %g mbps, %g pps%s.\n", bps / 1000000., pps, notes);
     }
   else if ( bps > 1000. )
     {
-      log_msg(level, file, line, " %g kbps, %g pps.\n", bps / 1000., pps);
+      log_msg(level, file, line, " %g kbps, %g pps%s.\n", bps / 1000., pps, notes);
     }
   else
     {
-      log_msg(level, file, line, " %g bps, %g pps.\n", bps, pps);
+      log_msg(level, file, line, " %g bps, %g pps%s.\n", bps, pps, notes);
     }
 }
 
@@ -178,13 +179,10 @@ void enqueuer_stats_rotate(struct enqueuer_stats* st)
   LOG_INF(" %lld bytes, %lld packets in this journal.\n",
           st->bytes_received_since_last_rotate,
           st->packets_received_since_last_rotate);
-
   uptime = now - st->last_rotate;
-
   rbps = (8. * (double)st->bytes_received_since_last_rotate) / (double)uptime;
   rpps = ((double)st->packets_received_since_last_rotate) / (double)uptime;
-
-  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps);
+  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps," received");
 
   st->socket_errors_since_last_rotate = 0LL;
   st->bytes_received_since_last_rotate = 0LL;
@@ -213,12 +211,14 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
              st->loss_since_last_rotate);
     }
 
+  LOG_INF("Events written since last rotate:\n");
+  LOG_INF(" %lld bytes, %lld packets in this journal.\n",
+          st->bytes_written_since_last_rotate,
+          st->packets_written_since_last_rotate);
   uptime = now - st->last_rotate;
-
   wbps = (8. * (double)st->bytes_written_since_last_rotate) / (double)uptime;
   wpps = ((double)st->packets_written_since_last_rotate) / (double)uptime;
-
-  log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps);
+  log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps," written");
 
   LOG_INF("Highest queue utilization since last rotate: %d packets.\n",
           st->hiq_since_last_rotate);
