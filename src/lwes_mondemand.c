@@ -88,7 +88,13 @@ void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const 
 
 #else /* HAVE_MONDEMAND */
 
-void mondemand_stats (const struct stats* stats, time_t now)
+void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
+{
+  (void)stats;
+  (void)now;
+}
+
+void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
 {
   (void)stats;
   (void)now;
