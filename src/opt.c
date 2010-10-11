@@ -60,8 +60,6 @@ const char*  arg_journ_type    = ARG_GZ;
 #else
 const char*  arg_journ_type    = ARG_FILE;
 #endif
-int    arg_rotate_mask         = 30 ; /* ignore any duplicate Command::Rotate
-                                       * within 30 seconds */
 char*  arg_monitor_type        = NULL ;
 
 #if HAVE_PTHREAD_H
@@ -147,7 +145,6 @@ void process_options(int argc, const char* argv[])
     { "queue-max-sz",  0,  POPT_ARG_INT,    &arg_queue_max_sz,   0, "Max message size for queue, dflt=65535", "int" },
     { "queue-name",   'Q', POPT_ARG_STRING, &arg_queue_name,     0, "Queue name, should start with '/', dflt='/lwes_journal'", "string" },
     { "queue-type",   'q', POPT_ARG_STRING, &arg_queue_type,     0, "Queue type", "{" ARG_MSG "," ARG_MQ "}" },
-    { "rotate-mask",  'd', POPT_ARG_INT,    &arg_rotate_mask,    0, "Rotate mask, dflt=30", "seconds" },
     { "real-time",    'R', POPT_ARG_NONE,   &arg_rt,             0, "Run threads with real-time priority", 0 },
     { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },

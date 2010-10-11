@@ -1,5 +1,6 @@
 #include "lwes_mondemand.h"
 #include "opt.h"
+#include "stats.h"
 #include <string.h>
 
 #ifdef HAVE_MONDEMAND

@@ -50,9 +50,6 @@ void* queue_to_journal(void* arg)
   size_t bufsiz;
   int pending ;
 
-  time_t last_rotate = time(NULL);
-  time_t this_rotate ;
-
   (void)arg; /* appease -Wall -Werror */
 
   dequeuer_stats_ctor(&dst);
@@ -141,7 +138,7 @@ void* queue_to_journal(void* arg)
                que_read_ret, pending);
 
       // is this a command event?
-      switch ( header_is_rotate(buf, &this_rotate) )
+      switch ( header_is_rotate(buf) )
         {
           case 2:
               { // System::Ping
@@ -152,13 +149,6 @@ void* queue_to_journal(void* arg)
           case 1:
               { // Command::Rotate
                 // is it a new enough Command::Rotate, or masked out?
-                time_t since = this_rotate - last_rotate;
-                if ( since < arg_rotate_mask )
-                  {
-                    continue ; // don't respond to duplicate Command::Rotate's
-                  }
-
-                last_rotate = this_rotate ;
                 memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
                 gbl_rotate = 1;
 

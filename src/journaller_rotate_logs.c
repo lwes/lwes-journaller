@@ -44,20 +44,15 @@ int main(int argc, const char* argv[])
       exit(EXIT_FAILURE);
     }
 
-  int idx;
-  for ( idx=0; idx<3; idx++ )
+  if ( (xpt_write_ret = xpt.vtbl->write(&xpt,
+                                        rotate_event,
+                                        sizeof(rotate_event))) < 0 )
     {
-      if ( (xpt_write_ret = xpt.vtbl->write(&xpt,
-                                            rotate_event,
-                                            sizeof(rotate_event))) < 0 )
-        {
-          LOG_ER("Xport Command::Rotate write error.");
-          xpt.vtbl->destructor(&xpt);
-          exit(EXIT_FAILURE);
-        }
-      sleep(1) ;
+      LOG_ER("Xport Command::Rotate write error.");
+      xpt.vtbl->destructor(&xpt);
+      exit(EXIT_FAILURE);
     }
-
+  
   xpt.vtbl->destructor(&xpt);
 
   return 0;

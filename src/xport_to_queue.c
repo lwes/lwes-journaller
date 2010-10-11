@@ -44,9 +44,6 @@ void* xport_to_queue(void* arg)
   struct xport xpt;
   struct queue que;
 
-  time_t last_rotate = time(NULL);
-  time_t this_rotate ;
-
   unsigned char* buf = 0;
   size_t bufsiz;
 
@@ -114,14 +111,9 @@ void* xport_to_queue(void* arg)
 
       header_add(buf, xpt_read_ret, addr, port);
 
-      if ( header_is_rotate (buf, &this_rotate) == 1 )
-        { // Command::Rotate: is it a new enough Command::Rotate, or masked out?
-          time_t since = this_rotate - last_rotate;
-          if ( since >= arg_rotate_mask )
-            {
-              enqueuer_stats_rotate(&est);
-              last_rotate = this_rotate;
-            }
+      if ( header_is_rotate (buf) )
+        { // Command::Rotate
+          enqueuer_stats_rotate(&est);
         }
 
       if ( (que_write_ret = que.vtbl->write(&que,

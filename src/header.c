@@ -48,25 +48,13 @@ void header_add(void* buf, int count, unsigned long addr, unsigned short port)
   /* reserved */
 }
 
-int header_is_rotate (void* buf, time_t* when)
+int header_is_rotate (void* buf)
 {
   if ( toknam_eq((unsigned char *)buf + HEADER_LENGTH,
                  (unsigned char *)ROTATE_COMMAND) )
     {
-      unsigned long long tm;
-      unsigned char* cp = (unsigned char*)buf + 2 ;
       LOG_PROG("Command::Rotate message received.\n");
-      unmarshal_ulong_long(cp, tm);
-      *when = (time_t)(tm / 1000LL);
       return 1;
-    }
-
-  // Ping-Pong ?
-  if ( toknam_eq((unsigned char *)buf + HEADER_LENGTH,
-                 (unsigned char *)JOURNALLER_PING_EVENT_TYPE) )
-    {
-      LOG_PROG("System::Ping message received.\n");
-      return 2;
     }
 
   return 0;
