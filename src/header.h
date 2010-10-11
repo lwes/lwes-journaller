@@ -58,7 +58,6 @@ extern void header_add(void* buf, int count, unsigned long addr, unsigned short 
 extern int  header_is_rotate(void* buf);
 extern void header_fingerprint(void* buf, struct packet_check* pc);
 extern int  toknam_eq(const unsigned char* toknam, const unsigned char* nam) ;
-extern int  ping (void* buf, size_t bufsiz);
 
 extern void header_print(const char* buf);
 
@@ -71,10 +70,5 @@ uint16_t    header_site_id(const char* header);              /* Site ID number *
 /* The character at the beginning of the string is the length byte.
    Strings in events are Pascal style. */
 #define ROTATE_COMMAND    "\017Command::Rotate"
-
-#define JOURNALLER_PING_EVENT_TYPE "\014System::Ping"
-#define JOURNALLER_PONG_EVENT_TYPE "\014System::Pong"
-#define JOURNALLER_PING_SENDER_IP_FIELD "SenderIP"
-#define JOURNALLER_PING_RETURN_PORT_FIELD "ReturnPort"
 
 #endif /* HEADER_DOT_H */

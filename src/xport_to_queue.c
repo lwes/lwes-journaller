@@ -112,7 +112,7 @@ void* xport_to_queue(void* arg)
       header_add(buf, xpt_read_ret, addr, port);
 
       if ( header_is_rotate (buf) )
-        { // Command::Rotate
+        { // Command::Rotate: here we just collect some stats.
           enqueuer_stats_rotate(&est);
         }
 

@@ -129,45 +129,30 @@ void* queue_to_journal(void* arg)
 
       if ( (que_read_ret = que.vtbl->read(&que, buf, bufsiz, &pending)) < 0 )
         {
-          /* queue is empty; if we're shutting down, exit this loop. */
-          if (gbl_done) break;
           /* queue is empty */
-          continue;
-      }
+          if (gbl_done) break; /* if we're shutting down, exit this loop. */
+          continue;            /* no event, so do not process the rest */
+        }
       LOG_PROG("Read %d bytes from queue (%d pending).\n",
                que_read_ret, pending);
 
       // is this a command event?
-      switch ( header_is_rotate(buf) )
+      if ( header_is_rotate(buf) )
+        { // Command::Rotate
+          // is it a new enough Command::Rotate, or masked out?
+          memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
+          gbl_rotate = 1;
+        }
+
+      dequeuer_stats_record(&dst, que_read_ret-HEADER_LENGTH, pending);
+      /* Write the packet out to the journal. */
+      if ( (jrn_write_ret = jrn[jcurr].vtbl->write(&jrn[jcurr],
+                                                   buf, que_read_ret)) 
+           != que_read_ret )
         {
-          case 2:
-              { // System::Ping
-                ping(buf, que_read_ret) ;
-                goto fallthru ;
-              }
-
-          case 1:
-              { // Command::Rotate
-                // is it a new enough Command::Rotate, or masked out?
-                memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
-                gbl_rotate = 1;
-
-                // fall through to write this Command::Rotate out before
-                // looping to actually rotate.
-              }
-
-          default:
-fallthru:
-            dequeuer_stats_record(&dst, que_read_ret-HEADER_LENGTH, pending);
-            /* Write the packet out to the journal. */
-            if ( (jrn_write_ret = jrn[jcurr].vtbl->write(&jrn[jcurr],
-                                                         buf, que_read_ret)) 
-                   != que_read_ret )
-              {
-                LOG_ER("Journal write error -- attempted to write %d bytes, "
-                       "write returned %d.\n", que_read_ret, jrn_write_ret);
-                dequeuer_stats_record_loss(&dst);
-              }
+          LOG_ER("Journal write error -- attempted to write %d bytes, "
+                 "write returned %d.\n", que_read_ret, jrn_write_ret);
+          dequeuer_stats_record_loss(&dst);
         }
     } /* while ( ! gdb_done) */
 

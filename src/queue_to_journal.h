@@ -23,6 +23,5 @@
 #include <sys/types.h>
 
 void* queue_to_journal (void* arg);
-extern int ping (void* buf, size_t bufsiz) ;
 
 #endif /* QUEUE_TO_JOURNAL_DOT_H */

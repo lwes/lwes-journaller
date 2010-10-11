@@ -36,7 +36,6 @@ extern int            arg_log_level;
 extern const char*    arg_log_file;
 extern int            arg_njournalls;
 extern int            arg_nodaemonize;
-extern int            arg_nopong;
 extern int            arg_nreaders;
 extern const char*    arg_pid_file;
 extern int            arg_port;

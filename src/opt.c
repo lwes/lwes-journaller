@@ -76,7 +76,6 @@ const char*  arg_interface     = "";
 int          arg_join_group    = 1;
 int          arg_sockbuffer    = 16*1024*1024;
 int          arg_ttl           = 16 ;
-int          arg_nopong        = 0 ;
 
 /* Set the logging level, see log.h. */
 int    arg_log_level           =  LOG_MASK_ERROR
@@ -130,7 +129,6 @@ void process_options(int argc, const char* argv[])
     { "join-group",   'g', POPT_ARG_INT,    &arg_join_group,     0, "Join multicast group", "0/1" },
     { "journal-type", 'j', POPT_ARG_STRING, &arg_journ_type,     0, "Journal type", "{" ARG_GZ "," ARG_FILE "}" },
     { "monitor-type", 'j', POPT_ARG_STRING, &arg_monitor_type,   0, "Monitor type", 0 },
-    { "nopong",        0,  POPT_ARG_NONE,   &arg_nopong,         0, "Don not reply to System::Ping", 0 },
     { "nreaders",     'r', POPT_ARG_INT,    &arg_nreaders,       0, "Number of network reading threads, dflt=1, max=5", 0 },
     { "pid-file",     'f', POPT_ARG_STRING, &arg_pid_file,       0, "PID file, dflt=NULL", "path" },
     { "port",         'p', POPT_ARG_INT,    &arg_port,           0, "Port number to listen on, dflt=9191", "short" },
@@ -304,7 +302,6 @@ void process_options(int argc, const char* argv[])
               "  arg_log_level == %s (%d)\n"
               "  arg_log_file == %s\n"
               "  arg_njournalls == %d\n"
-              "  %s" // -nopong generates own message
               "  arg_nreaders == %d\n"
               "  arg_port == %d\n"
               "  arg_queue_max_cnt == %d\n"
@@ -330,7 +327,6 @@ void process_options(int argc, const char* argv[])
               arg_log_level,
               arg_log_file,
               arg_njournalls,
-              arg_nopong?"  arg_nopong\n":"",
               arg_nreaders,
               arg_port,
               arg_queue_max_cnt,
