@@ -450,6 +450,20 @@ static void write_pid_file()
 }
 
 
+/* Delete the PID file, if one was configured. */
+
+static void delete_pid_file()
+{
+  if ( arg_pid_file )
+    {
+      if ( unlink ( arg_pid_file ) < 0 )
+        {
+          PERROR("Unable to delete pid file");
+        }
+    }
+}
+
+
 int main(int argc, const char* argv[])
 {
   char _buf[100] ; // for log messages
@@ -526,6 +540,8 @@ int main(int argc, const char* argv[])
   strcat(_buf, _progver) ;
   strcat(_buf, "\n") ;
   LOG_INF(_buf);
+
+  delete_pid_file();
 
   return 0;
 }
