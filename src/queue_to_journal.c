@@ -48,7 +48,7 @@ void* queue_to_journal(void* arg)
   int jcurr = 0;
   void* buf = NULL ;
   size_t bufsiz;
-  int pending ;
+  int pending = 0, write_pending = 0;
 
   (void)arg; /* appease -Wall -Werror */
 
@@ -107,7 +107,8 @@ void* queue_to_journal(void* arg)
       if ( gbl_rotate )
         { // <gbl_rotate>
 
-          LOG_PROG("About to rotate journal.\n");
+          LOG_INF("About to rotate journal (%d pending).\n", pending);
+          write_pending = 1;
 
           dequeuer_stats_rotate(&dst);
           if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
@@ -135,6 +136,11 @@ void* queue_to_journal(void* arg)
         }
       LOG_PROG("Read %d bytes from queue (%d pending).\n",
                que_read_ret, pending);
+      if (write_pending)
+        {
+          LOG_INF("Done with rotating journal (%d pending).\n", pending);
+          write_pending = 0;
+        }
 
       // is this a command event?
       if ( header_is_rotate(buf) )
