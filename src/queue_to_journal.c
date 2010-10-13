@@ -60,7 +60,7 @@ static int rotate(struct journal* jrn, int jcurr)
     }
   
   t1 = time_in_milliseconds();
-  LOG_INF("Rotated in %0.2f seconds", (t1-t0)/1000000.);
+  LOG_INF("Rotated in %0.2f seconds\n", (t1-t0)/1000000.);
   
   return jcurr;
 }
@@ -135,10 +135,10 @@ void* queue_to_journal(void* arg)
         { // <gbl_rotate>
 
           LOG_INF("Maximum receive time was %0.2f seconds;"
-                  " total receive time was %0.2f seconds",
+                  " total receive time was %0.2f seconds\n",
                   max_receive_time/1000000., total_receive_time/1000000.);
           LOG_INF("Maximum write time was %0.2f seconds;"
-                  " total write time was %0.2f seconds",
+                  " total write time was %0.2f seconds\n",
                   max_write_time/1000000., total_write_time/1000000.);
           LOG_INF("About to rotate journal (%d pending).\n", pending);
           write_pending = 1;
