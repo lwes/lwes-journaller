@@ -253,7 +253,7 @@ static void thread_model()
     {
       PERROR("pthread_create(&queue_to_journal_tid, NULL, queue_to_journal, NULL)");
     }
-  LOG_PROG("queue_to_journal_tid == %d\n", queue_to_journal_tid);
+  LOG_INF("queue_to_journal_tid == %d\n", queue_to_journal_tid);
 
   for ( i=0; i<arg_nreaders; ++i )
     {
@@ -276,7 +276,7 @@ static void thread_model()
             default: LOG_ER("pthread_policy=unknown") ; break ;
             }
 
-          LOG_PROG("xport_to_queue_tid[%d] == %d\n",
+          LOG_INF("xport_to_queue_tid[%d] == %d\n",
                    i, xport_to_queue_tid[i]);
         }
     }
