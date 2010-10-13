@@ -47,7 +47,6 @@ void* xport_to_queue(void* arg)
   unsigned char* buf = 0;
   size_t bufsiz;
 
-  int read_errors = 0;
   (void)arg; /* appease -Wall -Werror */
 
   install_signal_handlers();
@@ -93,7 +92,6 @@ void* xport_to_queue(void* arg)
                                           bufsiz - HEADER_LENGTH,
                                           &addr, &port)) < 0 )
         {
-          ++read_errors;
           enqueuer_stats_record_socket_error(&est);
           continue;
         }
@@ -103,11 +101,6 @@ void* xport_to_queue(void* arg)
       /* Return info about packet read. */
       LOG_PROG("Read %d bytes\n", xpt_read_ret);
       LOG_PROG("From %08lx:%04x.\n", addr, port&0xffff);
-      if ( read_errors )
-        {
-          LOG_PROG("read_errors == %d\n", read_errors);
-        }
-      read_errors = 0;
 
       header_add(buf, xpt_read_ret, addr, port);
 
