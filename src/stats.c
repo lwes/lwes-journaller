@@ -184,11 +184,6 @@ void enqueuer_stats_rotate(struct enqueuer_stats* st)
   rpps = ((double)st->packets_received_since_last_rotate) / (double)uptime;
   log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps," received");
 
-  st->socket_errors_since_last_rotate = 0LL;
-  st->bytes_received_since_last_rotate = 0LL;
-  st->packets_received_since_last_rotate = 0LL;
-  st->last_rotate = now;
-
   LOG_INF("Enqueuer stats summary v2:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\n",
           now, st->socket_errors_since_last_rotate,
           st->bytes_received_total, st->bytes_received_since_last_rotate,
@@ -196,6 +191,11 @@ void enqueuer_stats_rotate(struct enqueuer_stats* st)
           uptime);
 
   mondemand_enqueuer_stats(st,now);
+
+  st->socket_errors_since_last_rotate = 0LL;
+  st->bytes_received_since_last_rotate = 0LL;
+  st->packets_received_since_last_rotate = 0LL;
+  st->last_rotate = now;
 }
 
 void dequeuer_stats_rotate(struct dequeuer_stats* st)
@@ -230,13 +230,6 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
           header_sender_ip_formatted(st->latest_rotate_header),
           time_in_milliseconds()-header_receipt_time(st->latest_rotate_header));
 
-  st->bytes_written_since_last_rotate = 0LL;
-  st->packets_written_since_last_rotate = 0LL;
-  st->hiq_since_last_rotate = 0;
-  st->packets_written_in_burst_since_last_rotate = st->bytes_written_in_burst_since_last_rotate = 0LL ;
-  st->loss_since_last_rotate = 0LL;
-  st->last_rotate = now;
-
   LOG_INF("Dequeuer stats summary v2:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\t%d\t%d\t%d\t%lld\t%lld\t%d\n",
           now, st->loss_since_last_rotate,
           st->bytes_written_total, st->bytes_written_since_last_rotate,
@@ -247,6 +240,13 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
           st->packets_written_in_burst_since_last_rotate, uptime);
 
   mondemand_dequeuer_stats(st,now);
+
+  st->bytes_written_since_last_rotate = 0LL;
+  st->packets_written_since_last_rotate = 0LL;
+  st->hiq_since_last_rotate = 0;
+  st->packets_written_in_burst_since_last_rotate = st->bytes_written_in_burst_since_last_rotate = 0LL ;
+  st->loss_since_last_rotate = 0LL;
+  st->last_rotate = now;
 }
 
 void enqueuer_stats_report(struct enqueuer_stats* st)
