@@ -160,6 +160,7 @@ void* queue_to_journal(void* arg)
         }
       receive_time = time_in_milliseconds() - t0;
       if ( max_receive_time < receive_time ) max_receive_time = receive_time;
+      total_receive_time += receive_time;
       
       LOG_PROG("Read %d bytes from queue (%d pending).\n",
                que_read_ret, pending);
@@ -190,6 +191,7 @@ void* queue_to_journal(void* arg)
         }
       write_time = time_in_milliseconds() - t0;
       if ( max_write_time < write_time ) max_write_time = write_time;
+      total_write_time += write_time;
     } /* while ( ! gdb_done) */
 
   dequeuer_stats_rotate(&dst);
