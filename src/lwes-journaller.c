@@ -24,6 +24,7 @@
 #include "opt.h"
 #include "perror.h"
 #include "queue_to_journal.h"
+#include "serial_model.h"
 #include "sig.h"
 #include "xport_to_queue.h"
 
@@ -534,6 +535,11 @@ int main(int argc, const char* argv[])
   if ( strcmp(arg_proc_type, ARG_THREAD) == 0 )
     {
       thread_model();
+    }
+
+  if ( strcmp(arg_proc_type, ARG_SERIAL) == 0 )
+    {
+      serial_model();
     }
 
   strcpy(_buf, "Normal shutdown complete - ") ;

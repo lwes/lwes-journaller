@@ -34,6 +34,7 @@ commonsource = \
 								xport.c \
 								xport_to_queue.c \
 								xport_udp.c \
+								serial_model.c \
 								stats.c \
 								rename_journal.c
 

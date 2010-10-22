@@ -61,6 +61,7 @@ extern int            arg_mondemand_port;
 /* arg_proc_type: */
 #define ARG_PROCESS "process"
 #define ARG_THREAD  "thread"
+#define ARG_SERIAL  "serial"
 
 /* arg_queue_type: */
 #define ARG_MQ      "mq"

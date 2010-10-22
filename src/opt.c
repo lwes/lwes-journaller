@@ -132,7 +132,7 @@ void process_options(int argc, const char* argv[])
     { "nreaders",     'r', POPT_ARG_INT,    &arg_nreaders,       0, "Number of network reading threads, dflt=1, max=5", 0 },
     { "pid-file",     'f', POPT_ARG_STRING, &arg_pid_file,       0, "PID file, dflt=NULL", "path" },
     { "port",         'p', POPT_ARG_INT,    &arg_port,           0, "Port number to listen on, dflt=9191", "short" },
-    { "thread-type",  't', POPT_ARG_STRING, &arg_proc_type,      0, "Threading model, '" ARG_THREAD "' or '" ARG_PROCESS "', dflt="
+    { "thread-type",  't', POPT_ARG_STRING, &arg_proc_type,      0, "Threading model, '" ARG_THREAD "' or '" ARG_PROCESS "' or '" ARG_SERIAL "', dflt="
 #if HAVE_PTHREAD_H
       ARG_THREAD
 #else

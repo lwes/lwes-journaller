@@ -84,6 +84,7 @@ void* xport_to_queue(void* arg)
       int xpt_read_ret;
       int que_write_ret;
 
+      unsigned long long tm;
       unsigned long addr;
       short port;
 
@@ -95,6 +96,7 @@ void* xport_to_queue(void* arg)
           enqueuer_stats_record_socket_error(&est);
           continue;
         }
+      tm = time_in_milliseconds();
 
       enqueuer_stats_record_datagram(&est,xpt_read_ret);
 
@@ -102,7 +104,7 @@ void* xport_to_queue(void* arg)
       LOG_PROG("Read %d bytes\n", xpt_read_ret);
       LOG_PROG("From %08lx:%04x.\n", addr, port&0xffff);
 
-      header_add(buf, xpt_read_ret, time_in_milliseconds(), addr, port);
+      header_add(buf, xpt_read_ret, tm, addr, port);
 
       if ( header_is_rotate (buf) )
         { // Command::Rotate: here we just collect some stats.
