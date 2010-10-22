@@ -102,7 +102,7 @@ void* xport_to_queue(void* arg)
       LOG_PROG("Read %d bytes\n", xpt_read_ret);
       LOG_PROG("From %08lx:%04x.\n", addr, port&0xffff);
 
-      header_add(buf, xpt_read_ret, addr, port);
+      header_add(buf, xpt_read_ret, time_in_milliseconds(), addr, port);
 
       if ( header_is_rotate (buf) )
         { // Command::Rotate: here we just collect some stats.

@@ -34,10 +34,9 @@
 
 #define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
 
-void header_add(void* buf, int count, unsigned long addr, unsigned short port)
+void header_add(void* buf, int count, unsigned long long tm, unsigned long addr, unsigned short port)
 {
   unsigned char*     cp = (unsigned char*)buf;
-  unsigned long long tm = time_in_milliseconds();
 
   marshal_short(cp, count);    /* Size of message body. */
   marshal_ulong_long(cp, tm);  /* Now in msec. */

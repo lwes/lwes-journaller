@@ -54,7 +54,7 @@ struct packet_check {
   char md5[16];
 };
 
-extern void header_add(void* buf, int count, unsigned long addr, unsigned short port);
+extern void header_add(void* buf, int count, unsigned long long tm, unsigned long addr, unsigned short port);
 extern int  header_is_rotate(void* buf);
 extern void header_fingerprint(void* buf, struct packet_check* pc);
 extern int  toknam_eq(const unsigned char* toknam, const unsigned char* nam) ;
