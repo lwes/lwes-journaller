@@ -4,10 +4,6 @@
 
 myincludes = $(LWES_CFLAGS) $(MONDEMAND_CFLAGS)
 
-# any additional files to add to the distribution
-
-myextradist =
-
 # any additional files to clean up with 'make clean'
 
 mycleanfiles =
@@ -19,44 +15,69 @@ mymaintainercleanfiles = config.h.in
 # list of source files comprising program
 
 commonsource = \
-								opt.c \
-								log.c \
-								lwes_mondemand.c \
-								header.c \
-								journal_factory.c \
-								journal_file.c \
-								journal_gz.c \
-								queue_factory.c \
-								queue_mqueue.c \
-								queue_msg.c \
-								queue_to_journal.c \
-								sig.c \
-								xport.c \
-								xport_to_queue.c \
-								xport_udp.c \
-								serial_model.c \
-								stats.c \
-								rename_journal.c
+  opt.c \
+  log.c \
+  lwes_mondemand.c \
+  header.c \
+  journal_factory.c \
+  journal_file.c \
+  journal_gz.c \
+  queue_factory.c \
+  queue_mqueue.c \
+  queue_msg.c \
+  queue_to_journal.c \
+  sig.c \
+  xport.c \
+  xport_to_queue.c \
+  xport_udp.c \
+  serial_model.c \
+  stats.c \
+  rename_journal.c
+
+myheaderfiles =       \
+  global.h            \
+  header.h            \
+  journal_file.h      \
+  journal_gz.h        \
+  journal.h           \
+  log.h               \
+  lwes_mondemand.h    \
+  marshal.h           \
+  opt.h               \
+  perror.h            \
+  queue.h             \
+  queue_mqueue.h      \
+  queue_msg.h         \
+  queue_to_journal.h  \
+  rename_journal.h    \
+  serial_model.h      \
+  sig.h               \
+  stats.h             \
+  xport.h             \
+  xport_to_queue.h    \
+  xport_udp.h
 
 journallersource = \
-								lwes-journaller.c
+  lwes-journaller.c
 
 rotatesourcefiles = \
-								journaller_rotate_logs.c
+  journaller_rotate_logs.c
 
 queuejournalsources = \
-								queue_to_journal_main.c
+  queue_to_journal_main.c
 
 xportsources = \
-								xport_to_queue_main.c
+  xport_to_queue_main.c
 
-mysourcefiles =
+bin_PROGRAMS =           \
+  lwes-journaller        \
+  lwes-journaller-rotate \
+  queue_to_journal       \
+  xport_to_queue
 
-bin_PROGRAMS = \
-  lwes-journaller \
-	lwes-journaller-rotate \
-	queue_to_journal \
-	xport_to_queue
+# any additional files to add to the distribution
+
+myextradist = ${myheaderfiles}
 
 lwes_journaller_SOURCES = ${commonsource} ${journallersource}
 lwes_journaller_rotate_SOURCES = ${commonsource} ${rotatesourcefiles}
