@@ -21,6 +21,7 @@ mymaintainercleanfiles = doc
 SUBDIRS = src ${mysubdirs} tests
 
 EXTRA_DIST =                            \
+    LICENSE                             \
     ${myextradist}
 
 CLEANFILES =                            \

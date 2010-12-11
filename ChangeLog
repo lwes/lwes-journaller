@@ -1,3 +1,21 @@
+Version 0.0.8 (anthonym)
+* Change License to New BSD
+* Add Yahoo Copyright's
+
+Version 0.0.7 (pfarnerp)
+* experimenting with a queueless serial implementation
+
+Version 0.0.6 (pfarnerp)
+* added timers on dequeuer actions, to investigate queue-lock.
+
+Version 0.0.5 (pfarnerp)
+* removed ping/pong, rotate-suppression interval; now deletes pid file
+
+Version 0.0.3 (pfarnerp)
+* removed sink/ram, peer_comparison(), --disable-hardcore
+
+Version 0.0.2 (pfarnerp)
+* adding mondemand
+
 Version 0.0.1 (mlum)
 * Initial version of an open source journaller
-
