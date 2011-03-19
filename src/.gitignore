@@ -1,0 +1,13 @@
+*.o
+*.gz
+.deps
+Makefile
+Makefile.in
+config.h
+config.h.in
+lwes-journaller
+lwes-journaller-rotate
+queue_to_journal
+stamp-h1
+xport_to_queue
+
