@@ -37,6 +37,8 @@ static int rotate(struct journal* jrn, int jcurr)
   unsigned long long t0 = time_in_milliseconds(), t1;
 
   dequeuer_stats_rotate(&dst);
+  stats_flush(); /* need to flush here, as this should be it's own process so
+                    would have it's own mondemand structure */
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
       LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);
@@ -187,6 +189,8 @@ void* queue_to_journal(void* arg)
     } /* while ( ! gdb_done) */
 
   dequeuer_stats_rotate(&dst);
+  stats_flush(); /* need to flush here, as this should be it's own process so
+                    would have it's own mondemand structure */
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
       LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);

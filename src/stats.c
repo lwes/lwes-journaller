@@ -236,7 +236,8 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
   st->bytes_written_since_last_rotate = 0LL;
   st->packets_written_since_last_rotate = 0LL;
   st->hiq_since_last_rotate = 0;
-  st->packets_written_in_burst_since_last_rotate = st->bytes_written_in_burst_since_last_rotate = 0LL ;
+  st->packets_written_in_burst_since_last_rotate = 0LL;
+  st->bytes_written_in_burst_since_last_rotate = 0LL;
   st->loss_since_last_rotate = 0LL;
   st->last_rotate = now;
 }
@@ -274,6 +275,12 @@ void enqueuer_stats_report(struct enqueuer_stats* st)
           st->bytes_received_total,
           st->packets_received_total);
   log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps," received");
+}
+
+/* mondemand in serial mode needs only one flush, to avoid global state we'll
+ * call this function from a few places */
+void stats_flush (void) {
+  mondemand_flush_both ();
 }
 
 void dequeuer_stats_report(struct dequeuer_stats* st)

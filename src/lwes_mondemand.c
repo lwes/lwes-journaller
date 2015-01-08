@@ -18,7 +18,17 @@
 #ifdef HAVE_MONDEMAND
 
 struct mondemand_client *client;
-#define mondemand_inc(x) mondemand_increment_key_by_val(client, #x, stats->x)
+/* set a counter in mondemand.
+ * NOTE: we need to drop into the lower level call since the journaller
+ * is keeping counters itself, and there's no high level call to set a counter
+ * in mondemand
+ */
+#define mondemand_inc(x) \
+  mondemand_stats_perform_op(client, __FILE__, __LINE__, \
+                             MONDEMAND_SET, MONDEMAND_COUNTER, \
+                             #x, (MondemandStatValue)(stats->x))
+/* set a gauge in mondemand */
+#define mondemand_set(x) mondemand_set_key_by_val(client, #x, (MondemandStatValue)(stats->x))
 
 static void init()
 {
@@ -41,37 +51,41 @@ static void init()
 
 void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
 {
+  (void)now; // appease -Wall -Werror
   init();
   if (client==NULL) return;
-  mondemand_inc(socket_errors_since_last_rotate);
+  mondemand_set(socket_errors_since_last_rotate);
   mondemand_inc(bytes_received_total);
-  mondemand_inc(bytes_received_since_last_rotate);
+  mondemand_set(bytes_received_since_last_rotate);
   mondemand_inc(packets_received_total);
-  mondemand_inc(packets_received_since_last_rotate);
-  mondemand_increment_key_by_val(client, "rotate", now);
-  mondemand_flush_stats(client);
+  mondemand_set(packets_received_since_last_rotate);
 }
 
 void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
 {
   init();
+  (void)now; // appease -Wall -Werror
   if (client==NULL) return;
-  mondemand_inc(loss_since_last_rotate);
+  mondemand_set(loss_since_last_rotate);
   mondemand_inc(bytes_written_total);
-  mondemand_inc(bytes_written_since_last_rotate);
+  mondemand_set(bytes_written_since_last_rotate);
   mondemand_inc(packets_written_total);
-  mondemand_inc(packets_written_since_last_rotate);
+  mondemand_set(packets_written_since_last_rotate);
   mondemand_inc(bytes_written_in_burst);
   mondemand_inc(packets_written_in_burst);
-  mondemand_inc(hiq);
-  mondemand_inc(hiq_start);
-  mondemand_inc(hiq_last);
-  mondemand_inc(hiq_since_last_rotate);
-  mondemand_inc(bytes_written_in_burst_since_last_rotate);
-  mondemand_inc(packets_written_in_burst_since_last_rotate);
-  mondemand_inc(start_time);
-  mondemand_inc(last_rotate);
-  mondemand_increment_key_by_val(client, "rotate", now);
+  mondemand_set(hiq);
+  mondemand_set(hiq_start);
+  mondemand_set(hiq_last);
+  mondemand_set(hiq_since_last_rotate);
+  mondemand_set(bytes_written_in_burst_since_last_rotate);
+  mondemand_set(packets_written_in_burst_since_last_rotate);
+  mondemand_set(start_time);
+  mondemand_set(last_rotate);
+}
+
+void mondemand_flush_both (void) {
+  init();
+  if (client==NULL) return;
   mondemand_flush_stats(client);
 }
 
@@ -111,6 +125,9 @@ void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
 {
   (void)stats;
   (void)now;
+}
+
+void mondemand_flush_both (void) {
 }
 
 void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf)

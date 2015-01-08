@@ -102,6 +102,9 @@ static void serial_close_journal(void)
 {
   enqueuer_stats_rotate(&est);
   dequeuer_stats_rotate(&dst);
+  stats_flush(); /* need to flush here, as this should
+                    be it's own process so would have it's
+                    own mondemand structure */
 
   if (jrn.vtbl->close(&jrn) < 0) {
     LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[0]);

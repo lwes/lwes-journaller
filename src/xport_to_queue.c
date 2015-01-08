@@ -101,6 +101,9 @@ void* xport_to_queue(void* arg)
       if ( header_is_rotate (buf) )
         { // Command::Rotate: here we just collect some stats.
           enqueuer_stats_rotate(&est);
+          stats_flush(); /* need to flush here, as this should
+                            be it's own process so would have it's
+                            own mondemand structure */
         }
 
       if ( (que_write_ret = que.vtbl->write(&que,

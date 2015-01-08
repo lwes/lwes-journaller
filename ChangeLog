@@ -1,3 +1,9 @@
+Version 0.2.0 (anthonym)
+* actually make mondemand stats correct (lots of double counting happening)
+
+Version 0.1.0 (anthonym)
+* update mondemand dep
+
 Version 0.0.8 (anthonym)
 * Change License to New BSD
 * Add Yahoo Copyright's

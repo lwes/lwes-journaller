@@ -18,7 +18,7 @@
 
 struct enqueuer_stats {
   long long socket_errors_since_last_rotate;
-  
+
   long long bytes_received_total;
   long long bytes_received_since_last_rotate;
 
@@ -65,6 +65,7 @@ void enqueuer_stats_record_socket_error (struct enqueuer_stats* this_stats);
 void enqueuer_stats_record_datagram (struct enqueuer_stats* this_stats, int bytes);
 void enqueuer_stats_rotate (struct enqueuer_stats* this_stats);
 void enqueuer_stats_report (struct enqueuer_stats* this_stats);
+void stats_flush (void);
 
 int dequeuer_stats_ctor (struct dequeuer_stats* this_stats);
 void dequeuer_stats_record (struct dequeuer_stats* this_stats, int bytes, int pending);
