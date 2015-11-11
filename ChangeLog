@@ -1,3 +1,5 @@
+* set SO_REUSEPORT if available
+
 Version 0.2.0 (anthonym)
 * actually make mondemand stats correct (lots of double counting happening)
 

@@ -154,6 +154,15 @@ static int xread (struct xport* this_xport, void* buf, size_t count,
           PERROR("setsockopt -- can't reuse address\n");
           return -1;
         }
+#ifdef HAVE_SO_REUSEPORT
+      /* Set port for reuse. */
+      if ( setsockopt(ppriv->fd, SOL_SOCKET, SO_REUSEPORT,
+                      &on, sizeof(on)) < 0 )
+        {
+          PERROR("setsockopt -- can't reuse port\n");
+          return -1;
+        }
+#endif
 
       /* Set the receive buffer size. */
       if ( arg_sockbuffer )
