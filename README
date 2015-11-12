@@ -1,25 +1,25 @@
-h1. LWES Journaller
+# LWES Journaller
 
-h2. Summary
-  The journaller listens on the given multicast ip and port and writes all
+## Summary
+The journaller listens on the given multicast ip and port and writes all
 events caught to a file which can be processed later.
 
 
-h2. Build Instructions
+## Build Instructions
 
-h3. Requirements
+### Install Requirements
    * popt -- for command line argument processing
    * libltdl -- for dlopen
    * sys/msg or mqueue messaging
    * lwes core
 
-h3. Build
-{quote}
-% ./configure --disable-hardcore
-% make
-{quote}
+### Build
+> % ./bootstrap
+> % ./configure --disable-hardcore
+> % make
 
-h2. Usage
-{quote}
-{quote}
+### Install
+> % sudo make install
 
+## Usage
+> lwes-journaller --help
