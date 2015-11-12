@@ -21,6 +21,7 @@ extern const char*    arg_ip;
 extern int            arg_join_group;
 extern char**         arg_journalls;
 extern char*          arg_disk_journals[10];
+extern int            arg_journal_rotate_interval;
 extern char*          arg_journ_name;
 extern const char*    arg_journ_type;
 extern char*          arg_monitor_type;

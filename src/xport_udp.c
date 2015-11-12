@@ -212,7 +212,8 @@ static int xread (struct xport* this_xport, void* buf, size_t count,
           default:
             PERROR("recvfrom");
 
-          case EINTR:			/* Quiet return on interrupt. */
+          case EINTR:
+            recvfrom_ret = -2; /* special return on interruption */
             break;
         }
     }

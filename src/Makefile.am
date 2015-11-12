@@ -32,6 +32,7 @@ commonsource = \
   xport_udp.c \
   serial_model.c \
   stats.c \
+  time_utils.c \
   rename_journal.c
 
 myheaderfiles =       \
@@ -53,6 +54,7 @@ myheaderfiles =       \
   serial_model.h      \
   sig.h               \
   stats.h             \
+  time_utils.h        \
   xport.h             \
   xport_to_queue.h    \
   xport_udp.h

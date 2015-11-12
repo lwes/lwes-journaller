@@ -95,6 +95,11 @@ char** arg_journalls;
 int    arg_njournalls;
 char*  arg_disk_journals[10];
 
+/* Journal rotate interval in seconds (will attempt to rotate on 
+ * round intervals starting at beginning of day)
+ */
+int    arg_journal_rotate_interval = 0;
+
 int    arg_nodaemonize         = 0;
 
 /* Print version, then exit. */
@@ -121,6 +126,7 @@ void process_options(int argc, const char* argv[])
     { "address",      'm', POPT_ARG_STRING, &arg_ip,             0, "IP address", "ip" },
     { "join-group",   'g', POPT_ARG_INT,    &arg_join_group,     0, "Join multicast group", "0/1" },
     { "journal-type", 'j', POPT_ARG_STRING, &arg_journ_type,     0, "Journal type", "{" ARG_GZ "," ARG_FILE "}" },
+    { "journal-rotate-interval", 'i', POPT_ARG_INT, &arg_journal_rotate_interval,     0, "Journal rotation interval in seconds (default off)", 0 },
     { "monitor-type", 'j', POPT_ARG_STRING, &arg_monitor_type,   0, "Monitor type", 0 },
     { "nreaders",     'r', POPT_ARG_INT,    &arg_nreaders,       0, "Number of network reading threads, dflt=1, max=5", 0 },
     { "pid-file",     'f', POPT_ARG_STRING, &arg_pid_file,       0, "PID file, dflt=NULL", "path" },
