@@ -223,6 +223,11 @@ void process_options(int argc, const char* argv[])
           arg_journal_uid = pw_entry->pw_uid;
         }
     }
+  else
+    {
+      /* default to the effective id of the user */
+      arg_journal_uid = geteuid();
+    }
 
   if ( arg_version )
     {
