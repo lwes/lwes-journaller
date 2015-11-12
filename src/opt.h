@@ -49,6 +49,7 @@ extern const char*    arg_xport;
 extern const char*    arg_mondemand_host;
 extern const char*    arg_mondemand_ip;
 extern int            arg_mondemand_port;
+extern const char*    arg_mondemand_program_id;
 #endif
 
 /* arg_proc_type: */

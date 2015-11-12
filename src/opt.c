@@ -112,6 +112,7 @@ int    arg_args;
 const char*    arg_mondemand_host = NULL;
 const char*    arg_mondemand_ip    = NULL;
 int            arg_mondemand_port  = 20402;
+const char*    arg_mondemand_program_id = "lwes-journaller";
 #endif
 
 void process_options(int argc, const char* argv[])
@@ -153,6 +154,7 @@ void process_options(int argc, const char* argv[])
     { "mondemand-host", 0, POPT_ARG_STRING, &arg_mondemand_host, 0, "Mondemand monitoring host", "string" },
     { "mondemand-ip",   0, POPT_ARG_STRING, &arg_mondemand_ip,   0, "Mondemand monitoring ip", "ip-address" },
     { "mondemand-port", 0, POPT_ARG_INT,    &arg_mondemand_port, 0, "Mondemand monitoring port dflt=20402", "port" },
+    { "mondemand-program-id", 0, POPT_ARG_STRING, &arg_mondemand_program_id, 0, "Mondemand program id (default is 'lwes-journaller')", "program-id" },
 #endif
 
     POPT_AUTOHELP
