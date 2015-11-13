@@ -1,4 +1,5 @@
 .*.out
+*.gz
 INSTALL
 Makefile
 Makefile.in

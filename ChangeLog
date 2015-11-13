@@ -1,3 +1,4 @@
+Version 0.3.0 (anthonym)
 * set SO_REUSEPORT if available
 * add an option to rotate on an interval (specified with '-i <secs>'), this
 uses setitimer() internally
