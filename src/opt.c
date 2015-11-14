@@ -382,6 +382,12 @@ void process_options(int argc, const char* argv[])
       ++bad_options;
     }
 
+  if (arg_journal_rotate_interval < 0)
+    {
+      LOG_ER("--journal-rotate-interval should be positive\n");
+      ++bad_options;
+    }
+
   if ( bad_options )
     {
       exit(EXIT_FAILURE);
