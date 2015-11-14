@@ -213,7 +213,7 @@ static int xread (struct xport* this_xport, void* buf, size_t count,
             PERROR("recvfrom");
 
           case EINTR:
-            recvfrom_ret = -2; /* special return on interruption */
+            recvfrom_ret = XPORT_INTR; /* special return on interruption */
             break;
         }
     }

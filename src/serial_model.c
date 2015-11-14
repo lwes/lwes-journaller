@@ -135,10 +135,11 @@ static int serial_read(void)
       ++count;
       return 0;
     }
-  else if (xpt_read_ret == -2)
+  else if (xpt_read_ret == XPORT_INTR)
     {
-      return -2; /* return something special if interrupted
-                    (we might be rotating via a signal or shutting down */
+      return XPORT_INTR; /* return something special if interrupted
+                            (we might be rotating via a signal or
+                            shutting down */
     }
   else
     {
@@ -241,11 +242,11 @@ void serial_model(void)
     if (read_ret == -1)             continue;
     /* depth tests are not written to the journal */
     if (serial_handle_depth_test()) continue;
-    /* -2 from read means we were interrupted and should not write, so write
-     * when we are not interrupted, this is for backward compatibility when
-     * we didn't do rotation signals correctly here
+    /* XPORT_INTR from read means we were interrupted and should not
+     * write, so write when we are not interrupted, this is for backward
+     * compatibility when we didn't do rotation signals correctly here
      */
-    if (read_ret != -2 )            serial_write();
+    if (read_ret != XPORT_INTR )            serial_write();
     /* check for rotation event, or signal's and rotate if necessary */
     if (header_is_rotate(buf) || gbl_rotate) serial_rotate();
     /* maybe send depth test */
