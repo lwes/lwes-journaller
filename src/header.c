@@ -56,6 +56,7 @@ void header_fingerprint(void* buf, struct packet_check* pc)
 
   /* Extract the timestamp. */
   unmarshal_short(cp, length);
+  (void)length; /* appease -Wall -Werror */
   unmarshal_ulong_long(cp, tm);
 
   /* Add phony timestamp of zero. */
