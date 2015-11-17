@@ -2,7 +2,7 @@ language: c
 
 addons:
   apt:
-    sources:
+    packages:
       - libpopt-dev
 
 before_script:
