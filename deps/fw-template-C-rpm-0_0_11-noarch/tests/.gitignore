@@ -1,0 +1,8 @@
+.*.script_ok
+Makefile
+Makefile.am
+Makefile.in
+share
+test-template
+test-template.out
+tmp
