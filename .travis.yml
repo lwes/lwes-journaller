@@ -1,5 +1,10 @@
 language: c
 
+addons:
+  apt:
+    sources:
+      - libpopt-dev
+
 before_script:
   - ls -R `pwd`/deps
   - ./bootstrap
