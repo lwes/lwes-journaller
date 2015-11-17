@@ -2,9 +2,9 @@
 set -e
 
 depdir="`pwd`/deps"
-mkdir $depdir
+mkdir -p $depdir
 srcdir="$depdir/source"
-mkdir $srcdir
+mkdir -p $srcdir
 
 # install framewerk
 cd $srcdir;
