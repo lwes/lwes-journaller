@@ -4,10 +4,7 @@ addons:
   apt:
     packages:
       - libpopt-dev
-
-before_script:
-  - ls -R `pwd`/deps
-  - ./bootstrap
+      - libltdl-dev
 
 before_install:
   - bash install-deps.sh
@@ -17,3 +14,9 @@ install:
   - export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:`pwd`/deps/lib/pkgconfig
   - export CFLAGS="$CFLAGS `pkg-config --cflags mondemand-4.0`"
   - export LIBS="$LIBS `pkg-config --libs mondemand-4.0`"
+
+before_script:
+  - ./bootstrap
+
+script:
+  - ./configure --with-mondemand && make && make check
