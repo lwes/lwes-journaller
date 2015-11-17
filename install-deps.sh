@@ -22,15 +22,15 @@ tar -xzvf fw-template-C-0.0.11.tar.gz;
 cd fw-template-C-rpm-0_0_11-noarch && ./bootstrap && ./configure --prefix=$depdir && make && make install;
 
 # install lwes
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$depdir/lib/pkgconfig
 cd $srcdir;
 wget https://github.com/lwes/lwes/archive/lwes-0.24.0.tar.gz -O lwes-0.24.0.tar.gz;
 tar -xzvf lwes-0.24.0.tar.gz;
 cd lwes-lwes-0.24.0 && ./bootstrap && ./configure --prefix=$depdir && make install;
 
 # install mondemand
-PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$depdir/lib/pkgconfig
-CFLAGS=$CFLAGS:`pkg-config --cflags lwes-0`
-LIBS=$LIBS:`pkg-config --libs lwes-0`
+export CFLAGS=$CFLAGS:`pkg-config --cflags lwes-0`
+export LIBS=$LIBS:`pkg-config --libs lwes-0`
 cd $srcdir;
 wget https://github.com/mondemand/mondemand/archive/rpm-4_2_1-x86_64.tar.gz -O mondemand-4.2.1.tar.gz;
 tar -xzvf mondemand-4.2.1.tar.gz;
