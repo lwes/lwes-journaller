@@ -5,6 +5,7 @@ addons:
     packages:
       - libpopt-dev
       - libltdl-dev
+      - libltdl7
 
 before_install:
   - bash install-deps.sh
