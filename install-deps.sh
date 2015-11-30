@@ -36,3 +36,5 @@ cd $srcdir;
 wget https://github.com/mondemand/mondemand/archive/rpm-4_2_1-x86_64.tar.gz -O mondemand-4.2.1.tar.gz;
 tar -xzvf mondemand-4.2.1.tar.gz;
 cd mondemand-rpm-4_2_1-x86_64 && ./bootstrap && ./configure --prefix=$depdir && make install;
+
+export LDFLAGS="-Wl,--no-as-needed"
