@@ -15,6 +15,7 @@ install:
   - export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:`pwd`/deps/lib/pkgconfig
   - export CFLAGS="$CFLAGS `pkg-config --cflags mondemand-4.0`"
   - export LIBS="$LIBS `pkg-config --libs mondemand-4.0`"
+  - export LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
 
 before_script:
   - ./bootstrap
