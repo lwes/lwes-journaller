@@ -1,3 +1,11 @@
+Version 0.3.0 (anthonym)
+* added a program 'lwes-journal-emitter' to emit a journal to lwes
+* set SO_REUSEPORT if available
+* add an option to rotate on an interval (specified with '-i <secs>'), this
+uses setitimer() internally
+* allow for mondemand-program-id to be overriden
+* default uid for journals to effective uid instead of 0 to avoid error logs
+
 Version 0.2.0 (anthonym)
 * actually make mondemand stats correct (lots of double counting happening)
 

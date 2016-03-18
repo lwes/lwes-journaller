@@ -14,7 +14,7 @@ mycleanfiles =
 
 # additional files to remove when make maintainer-clean is called
 
-mymaintainercleanfiles = doc
+mymaintainercleanfiles = doc deps
 
 # END: Variables to change
 # past here, hopefully, there is no need to edit anything

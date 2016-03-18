@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([lwes-journaller], [0.2.0], [lwes-devel@lists.sourceforge.net])
+AC_INIT([lwes-journaller], [0.3.0], [lwes-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE
 
 dnl Determine the host type for the host specific inclusion below
@@ -40,6 +40,7 @@ AM_CONFIG_HEADER(src/config.h)
 
 dnl -- make sure we have a C compiler and libtool
 AC_PROG_CC
+AC_PROG_CC_C99
 AM_PROG_LIBTOOL
 
 dnl Checks for header files.
@@ -107,6 +108,15 @@ AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
+
+dnl Check for SO_REUSEPORT
+AC_CHECK_DECL([SO_REUSEPORT],
+              AC_DEFINE(HAVE_SO_REUSEPORT,1,[Define if kernel supports SO_REUSEPORT]),
+              ,
+              [
+               #include <sys/types.h>
+               #include <sys/socket.h>
+              ])
 
 dnl Checks for library functions.
 AC_FUNC_ALLOCA

@@ -21,6 +21,7 @@ extern const char*    arg_ip;
 extern int            arg_join_group;
 extern char**         arg_journalls;
 extern char*          arg_disk_journals[10];
+extern int            arg_journal_rotate_interval;
 extern char*          arg_journ_name;
 extern const char*    arg_journ_type;
 extern char*          arg_monitor_type;
@@ -48,6 +49,7 @@ extern const char*    arg_xport;
 extern const char*    arg_mondemand_host;
 extern const char*    arg_mondemand_ip;
 extern int            arg_mondemand_port;
+extern const char*    arg_mondemand_program_id;
 #endif
 
 /* arg_proc_type: */

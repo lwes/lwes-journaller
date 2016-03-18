@@ -15,6 +15,8 @@
 
 #include <stddef.h>
 
+#define XPORT_INTR -2
+
 struct xport;
 
 struct xport_vtbl {

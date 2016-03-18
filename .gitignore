@@ -1,4 +1,5 @@
 .*.out
+*.gz
 INSTALL
 Makefile
 Makefile.in
@@ -10,9 +11,11 @@ config.status
 config.sub
 configure
 depcomp
+deps
 doxygen.config
 install-sh
 libtool
 ltmain.sh
 missing
-
+src/tmp
+ylwrap

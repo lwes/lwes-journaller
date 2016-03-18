@@ -126,19 +126,26 @@ static int serial_read(void)
   int           xpt_read_ret =
       xpt.vtbl->read(&xpt, buf+HEADER_LENGTH, BUFLEN-HEADER_LENGTH, &addr, &port);
 
-  if (xpt_read_ret < 0)
+  if (xpt_read_ret >= 0)
+    {
+      tm     = time_in_milliseconds();
+      buflen = xpt_read_ret + HEADER_LENGTH;
+      enqueuer_stats_record_datagram(&est, buflen);
+      header_add(buf, xpt_read_ret, tm, addr, port);
+      ++count;
+      return 0;
+    }
+  else if (xpt_read_ret == XPORT_INTR)
+    {
+      return XPORT_INTR; /* return something special if interrupted
+                            (we might be rotating via a signal or
+                            shutting down */
+    }
+  else
     {
       enqueuer_stats_record_socket_error(&est);
       return -1;
     }
-
-  tm     = time_in_milliseconds();
-  buflen = xpt_read_ret + HEADER_LENGTH;
-  enqueuer_stats_record_datagram(&est, buflen);
-  header_add(buf, xpt_read_ret, tm, addr, port);
-  ++count;
-  
-  return 0;
 }
 
 static int serial_handle_depth_test()
@@ -230,10 +237,19 @@ void serial_model(void)
   serial_ctor();
 
   do {
-    if (serial_read() < 0)          continue;
+    int read_ret = serial_read();
+    /* -1 is an error we don't deal with, so just skip out of the loop */
+    if (read_ret == -1)             continue;
+    /* depth tests are not written to the journal */
     if (serial_handle_depth_test()) continue;
-    serial_write();
+    /* XPORT_INTR from read means we were interrupted and should not
+     * write, so write when we are not interrupted, this is for backward
+     * compatibility when we didn't do rotation signals correctly here
+     */
+    if (read_ret != XPORT_INTR )            serial_write();
+    /* check for rotation event, or signal's and rotate if necessary */
     if (header_is_rotate(buf) || gbl_rotate) serial_rotate();
+    /* maybe send depth test */
     if (tm >= depth_tm + depth_dtm) serial_send_buffer_depth_test();
   }
   while (!gbl_done);

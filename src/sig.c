@@ -13,7 +13,8 @@
 #include "config.h"
 
 #include "sig.h"
-
+#include "opt.h"
+#include "time_utils.h"
 #include "log.h"
 #include "perror.h"
 
@@ -93,4 +94,26 @@ void install_rotate_signal_handlers()
 
   /* This one triggers a log rotate. */
   install(SIGUSR1, rotate_log_signal_handler);
+
+  if (arg_journal_rotate_interval) {
+    struct itimerval timer;
+    struct timeval now;
+    struct timeval next;
+    if (-1 == gettimeofday (&now, 0)) {
+      PERROR("gettimeofday");
+    }
+    install(SIGALRM, rotate_signal_handler);
+
+    time_to_next_round_interval (now, arg_journal_rotate_interval, &next);
+    /* Configure the timer to expire on the next round interval sec... */
+    timer.it_value.tv_sec = next.tv_sec;
+    timer.it_value.tv_usec = next.tv_usec;
+    /* ... and every interval seconds after that. */
+    timer.it_interval.tv_sec = arg_journal_rotate_interval;
+    timer.it_interval.tv_usec = 0;
+    /* set an interval timer to alarm for rotation */
+    if (setitimer (ITIMER_REAL, &timer, NULL) < 0) {
+      PERROR("setitimer");
+    }
+  }
 }

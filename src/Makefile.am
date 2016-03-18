@@ -32,6 +32,7 @@ commonsource = \
   xport_udp.c \
   serial_model.c \
   stats.c \
+  time_utils.c \
   rename_journal.c
 
 myheaderfiles =       \
@@ -53,6 +54,7 @@ myheaderfiles =       \
   serial_model.h      \
   sig.h               \
   stats.h             \
+  time_utils.h        \
   xport.h             \
   xport_to_queue.h    \
   xport_udp.h
@@ -72,6 +74,7 @@ xportsources = \
 bin_PROGRAMS =           \
   lwes-journaller        \
   lwes-journaller-rotate \
+  lwes-journal-emitter   \
   queue_to_journal       \
   xport_to_queue
 
@@ -81,6 +84,14 @@ myextradist = ${myheaderfiles}
 
 lwes_journaller_SOURCES = ${commonsource} ${journallersource}
 lwes_journaller_rotate_SOURCES = ${commonsource} ${rotatesourcefiles}
+lwes_journal_emitter_SOURCES = \
+  lwes_mondemand.c \
+  log.c \
+  opt.c \
+  sig.c \
+  header.c \
+  time_utils.c \
+  lwes-journal-emitter.c
 queue_to_journal_SOURCES = ${commonsource} ${queuejournalsources}
 xport_to_queue_SOURCES = ${commonsource} ${xportsources}
 
@@ -88,6 +99,7 @@ LDADD = $(LWES_LIBS) $(MONDEMAND_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt -lltdl
 
 lwes_journaller_LDFLAGS=-rdynamic
 lwes_journaller_rotate_LDFLAGS=
+lwes_journal_emitter_LDFLAGS=
 queue_to_journal_LDFLAGS=
 xport_to_queue_LDFLAGS=
 
