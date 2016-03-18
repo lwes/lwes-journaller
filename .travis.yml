@@ -7,18 +7,8 @@ addons:
       - libltdl-dev
       - libltdl7
 
-before_install:
+before_script:
   - bash install-deps.sh
 
-install:
-  - export PATH=$PATH:`pwd`/deps/bin
-  - export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:`pwd`/deps/lib/pkgconfig
-  - export CFLAGS="$CFLAGS `pkg-config --cflags mondemand-4.0`"
-  - export LIBS="$LIBS `pkg-config --libs mondemand-4.0` -ldl"
-  - export LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
-
-before_script:
-  - ./bootstrap
-
 script:
-  - ./configure --with-mondemand && make && make check
+  - bash travis-build.sh
