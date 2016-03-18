@@ -2,7 +2,8 @@
 
 set -e
 
-depdir="`pwd`/deps"
+cwd=`pwd`
+depdir="$cwd/deps"
 mkdir -p $depdir
 srcdir="$depdir/source"
 mkdir -p $srcdir
@@ -37,9 +38,9 @@ wget https://github.com/mondemand/mondemand/archive/rpm-4_2_1-x86_64.tar.gz -O m
 tar -xzvf mondemand-4.2.1.tar.gz;
 cd mondemand-rpm-4_2_1-x86_64 && ./bootstrap && ./configure --prefix=$depdir && make install;
 
-export PATH="$PATH:deps/bin"
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:deps/lib/pkgconfig"
-export CFLAGS="$CFLAGS `pkg-config --cflags mondemand-4.0`"
-export LIBS="$LIBS `pkg-config --libs mondemand-4.0` -ldl"
-export LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+cd $cwd
+export PATH="$PATH:$depdir/bin"
+export CFLAGS="`pkg-config --cflags mondemand-4.0`"
+export LIBS="`pkg-config --libs mondemand-4.0` -ldl"
+export LDFLAGS="-Wl,--no-as-needed"
 ./bootstrap && ./configure --with-mondemand && make && make check
