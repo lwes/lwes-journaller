@@ -40,6 +40,7 @@ AM_CONFIG_HEADER(src/config.h)
 
 dnl -- make sure we have a C compiler and libtool
 AC_PROG_CC
+AC_PROG_CC_C99
 AM_PROG_LIBTOOL
 
 dnl Checks for header files.

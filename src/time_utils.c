@@ -59,3 +59,34 @@ micro_time (const struct timeval now)
 
   return strdup (out);
 }
+
+void
+micro_now (struct timeval *now)
+{
+  gettimeofday(now, 0);
+}
+
+unsigned long long
+millis_timestamp (struct timeval *val)
+{
+  return (long long)(val->tv_sec) * 1000LL + (long long)(val->tv_usec) / 1000LL;
+}
+
+unsigned long long
+micro_timestamp (struct timeval *val)
+{
+  return (long long)(val->tv_sec) * 1000000LL + (long long)(val->tv_usec);
+}
+
+unsigned long long
+micro_timediff (struct timeval *start, struct timeval *end)
+{
+  long long computed =
+    (long long)((long long)end->tv_sec - (long long)start->tv_sec) * 1000000LL
+      + (long long)((long long)end->tv_usec - (long long)start->tv_usec);
+  if (computed < 0)
+    {
+      computed = 0LL;
+    }
+  return (unsigned long long)computed;
+}

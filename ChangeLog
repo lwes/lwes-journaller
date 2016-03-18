@@ -1,4 +1,5 @@
 Version 0.3.0 (anthonym)
+* added a program 'lwes-journal-emitter' to emit a journal to lwes
 * set SO_REUSEPORT if available
 * add an option to rotate on an interval (specified with '-i <secs>'), this
 uses setitimer() internally
