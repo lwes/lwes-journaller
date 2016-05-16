@@ -75,6 +75,8 @@ bin_PROGRAMS =           \
   lwes-journaller        \
   lwes-journaller-rotate \
   lwes-journal-emitter   \
+  lwes-journal-split     \
+  lwes-journal-stats     \
   queue_to_journal       \
   xport_to_queue
 
@@ -92,6 +94,22 @@ lwes_journal_emitter_SOURCES = \
   header.c \
   time_utils.c \
   lwes-journal-emitter.c
+lwes_journal_split_SOURCES = \
+  lwes_mondemand.c \
+  log.c \
+  opt.c \
+  sig.c \
+  header.c \
+  time_utils.c \
+  lwes-journal-split.c
+lwes_journal_stats_SOURCES = \
+  lwes_mondemand.c \
+  log.c \
+  opt.c \
+  sig.c \
+  header.c \
+  time_utils.c \
+  lwes-journal-stats.c
 queue_to_journal_SOURCES = ${commonsource} ${queuejournalsources}
 xport_to_queue_SOURCES = ${commonsource} ${xportsources}
 
@@ -100,6 +118,8 @@ LDADD = $(LWES_LIBS) $(MONDEMAND_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt -lltdl
 lwes_journaller_LDFLAGS=-rdynamic
 lwes_journaller_rotate_LDFLAGS=
 lwes_journal_emitter_LDFLAGS=
+lwes_journal_split_LDFLAGS=
+lwes_journal_stats_LDFLAGS=
 queue_to_journal_LDFLAGS=
 xport_to_queue_LDFLAGS=
 

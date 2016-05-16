@@ -6,6 +6,8 @@ Makefile.in
 config.h
 config.h.in
 lwes-journal-emitter
+lwes-journal-split
+lwes-journal-stats
 lwes-journaller
 lwes-journaller-rotate
 queue_to_journal
