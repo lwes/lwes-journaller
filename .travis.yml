@@ -4,8 +4,6 @@ addons:
   apt:
     packages:
       - libpopt-dev
-      - libltdl-dev
-      - libltdl7
 
 before_script:
   - bash install-deps.sh

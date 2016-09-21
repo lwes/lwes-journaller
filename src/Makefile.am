@@ -113,7 +113,7 @@ lwes_journal_stats_SOURCES = \
 queue_to_journal_SOURCES = ${commonsource} ${queuejournalsources}
 xport_to_queue_SOURCES = ${commonsource} ${xportsources}
 
-LDADD = $(LWES_LIBS) $(MONDEMAND_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt -lltdl
+LDADD = $(LWES_LIBS) $(MONDEMAND_LIBS) $(Z_LIBS) $(THREAD_LIBS) -lpopt
 
 lwes_journaller_LDFLAGS=-rdynamic
 lwes_journaller_rotate_LDFLAGS=

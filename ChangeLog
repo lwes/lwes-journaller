@@ -1,3 +1,7 @@
+Version 0.4.0 (anthonym)
+* updated to work with newer mondemand packages
+* removed odd dlopen stuff which as far as I can tell has never worked
+
 Version 0.3.0 (anthonym)
 * added a program 'lwes-journal-emitter' to emit a journal to lwes
 * set SO_REUSEPORT if available

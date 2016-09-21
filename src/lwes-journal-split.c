@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   char *part;
   for (int i = 0; i < MAX_FILE_PARTS; i++)
     {
-      file_parts[MAX_FILE_PARTS] = empty;
+      file_parts[i] = empty;
     }
   while ((part = strsep (&buffer, sep)) && file_part_count < MAX_FILE_PARTS)
     {

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([lwes-journaller], [0.3.0], [lwes-devel@lists.sourceforge.net])
+AC_INIT([lwes-journaller], [0.4.0], [lwes-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE
 
 dnl Determine the host type for the host specific inclusion below
@@ -75,7 +75,7 @@ dnl Check for mondemand installed, if requested
 AC_ARG_WITH([mondemand], AS_HELP_STRING([--with-mondemand],
                           [Build with support for mondemand logging and statistics (default: disabled)]))
 if test "x$with_mondemand" == "xyes"; then
-  PKG_CHECK_MODULES([MONDEMAND], [mondemand-4.0 >= 4.0.2])
+  PKG_CHECK_MODULES([MONDEMAND], [mondemand-4 >= 4.3.1])
   AC_SUBST(MONDEMAND_CFLAGS)
   AC_SUBST(MONDEMAND_LIBS)
   AC_DEFINE(HAVE_MONDEMAND, 1, [System supports mondemand])
