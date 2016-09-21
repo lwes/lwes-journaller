@@ -1,12 +1,14 @@
 language: c
+
 addons:
   apt:
     packages:
     - libpopt-dev
+
 before_script:
-- bash install-deps.sh
+- bash ./.travis-install-deps.sh
 script:
-- bash travis-build.sh
+- bash ./.travis-build.sh
 
 before_deploy:
   - "make dist"
