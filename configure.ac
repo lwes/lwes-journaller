@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT([lwes-journaller], [0.4.0], [lwes-devel@lists.sourceforge.net])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 dnl Determine the host type for the host specific inclusion below
 AC_CANONICAL_HOST

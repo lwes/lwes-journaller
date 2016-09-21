@@ -18,4 +18,6 @@ libtool
 ltmain.sh
 missing
 src/tmp
+test-driver
+tests/test-suite.log
 ylwrap

@@ -22,6 +22,7 @@ SUBDIRS = src ${mysubdirs} tests
 
 EXTRA_DIST =                            \
     LICENSE                             \
+    README.md                           \
     ${myextradist}
 
 CLEANFILES =                            \
