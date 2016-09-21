@@ -24,4 +24,4 @@ tar -xzvf mondemand-4.3.1.tar.gz;
 cd mondemand-4.3.1 && ./configure --prefix=$depdir && make install;
 
 cd $cwd
-./bootstrap && ./configure --with-mondemand && make && make check
+./bootstrap && ./configure --disable-hardcore --with-mondemand && make && make check
