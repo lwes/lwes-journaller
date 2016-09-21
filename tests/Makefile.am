@@ -83,7 +83,7 @@ leakcheck-%: %
 
 # NB: TESTS are ordered in dependency order
 
-TESTS = $(patsubst %, testwrapper-%, ${mytests}) ${myscripttests}
+TESTS = # $(patsubst %, testwrapper-%, ${mytests}) ${myscripttests}
 
 testwrapper-%: % test-wrapper.sh test-wrapper.sh.in
 	@ln -sf test-wrapper.sh $@
