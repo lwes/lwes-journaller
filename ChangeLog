@@ -1,3 +1,6 @@
+Version 0.4.0.0 (anthonym)
+* attempting to get travis releases to github working
+
 Version 0.4.0 (anthonym)
 * updated to work with newer mondemand packages
 * removed odd dlopen stuff which as far as I can tell has never worked
