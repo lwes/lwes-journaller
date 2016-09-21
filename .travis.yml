@@ -1,12 +1,18 @@
 language: c
-
 addons:
   apt:
     packages:
-      - libpopt-dev
-
+    - libpopt-dev
 before_script:
-  - bash install-deps.sh
-
+- bash install-deps.sh
 script:
-  - bash travis-build.sh
+- bash travis-build.sh
+deploy:
+  provider: releases
+  api_key:
+    secure: fUCon4ZQL2XaPSAaDhKMyFAwRZyyV5et5u641W6NvlIL1zyOutNGUzaxb3jM+sEj/JWN3nhPTs1PbZ2GvYX1+dKqw30ZyvqRAey9uSs1S2VR8f/aMaKzYC2RcD7Hq3FLvj/Ragb/zU39vCfQ/QgWeQmL7BW0qRy1nBFx1XBFpdYQfetXCw3ahmdejxzokWpXY3acumC1dCng/ckuSrYIpQocbtkvdgIBX/sOo0bQ35XndMwiTAA3yy5yR7t5aW2TqnaOHiH0+0+Tnrs6tkCr/urFWSLM5eOD4H7fEdUmP0fLBYXcAnua5rl47v8AxLT/ZARIjTx9ikwTkFT6kZ8SZI9cvNw7RmAF47Ybz8tdmhTAylZXBWCNCfxWKCkvM9VhN3wHu660b2t/DSaky11BJmo3NN/12lhP5LZPVcdxMNH6uzSBf57FEhC5hB3w72r614EhFGOS0zyJar+T8ZcVpe7z6P1qfukg12qudHc3m8oJZKOuCiZbdCgBAXEoxficAHrEbwO1v/iEurUaE1dzfqGGy5UZg52c+9qfsZWjb9pHZsdP+obXs2JXq8SFTNQ8sIxCB/RlP8SQju8vDXhWY79hOMOQ2ujo99xNz0IIoLt2KH1nVsck9xx1VmA4bJaC1TBxTMrP4uWyouB4NfI00l8Zj8HUvLqSLavJkpyO6jc=
+  skip_cleanup: true
+  file: 'lwes-journaller-*.tar.gz'
+  on:
+    tags: true
+    repo: lwes/lwes-journaller
