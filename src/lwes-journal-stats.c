@@ -87,7 +87,8 @@ int main(int argc, char **argv)
     }
   gzclose (file);
 
-  fprintf (stdout, "%s\t%d\n", filename, total_count);
+  fprintf (stdout, "%s\t%llu\t%llu\t%d\n",
+           filename, start_file_timestamp, end_file_timestamp, total_count);
 
 cleanup:
   exit (ret);
