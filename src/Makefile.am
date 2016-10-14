@@ -2,7 +2,7 @@
 
 # any additional includes to add to the compile lines
 
-myincludes = $(LWES_CFLAGS) $(MONDEMAND_CFLAGS)
+myincludes = $(LWES_CFLAGS) $(MONDEMAND_CFLAGS) -I libut/include
 
 # any additional files to clean up with 'make clean'
 
