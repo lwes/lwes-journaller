@@ -82,7 +82,7 @@ bin_PROGRAMS =           \
 
 # any additional files to add to the distribution
 
-myextradist = ${myheaderfiles}
+myextradist = ${myheaderfiles} libut
 
 lwes_journaller_SOURCES = ${commonsource} ${journallersource}
 lwes_journaller_rotate_SOURCES = ${commonsource} ${rotatesourcefiles}

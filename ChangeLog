@@ -1,3 +1,6 @@
+Version 0.5.1 (anthonym)
+* forgot libut in dist
+
 Version 0.5.0 (anthonym)
 * fix various stats output from serial mode journaller
 * make lwes-journal-stats useful
