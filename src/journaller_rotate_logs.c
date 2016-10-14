@@ -45,7 +45,7 @@ int main(int argc, const char* argv[])
       xpt.vtbl->destructor(&xpt);
       exit(EXIT_FAILURE);
     }
-  
+
   xpt.vtbl->destructor(&xpt);
 
   return 0;

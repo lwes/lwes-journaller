@@ -86,7 +86,7 @@ int         arg_journal_uid    = 0;
 const char* arg_journal_user   = NULL;
 
 /* Queue report interval. */
-/*TODO: int    arg_interval     = 60;*/
+int    arg_queue_test_interval = 10000;
 
 const char*  arg_pid_file      = "/var/run/lwes-journaller.pid";
 
@@ -123,7 +123,7 @@ void process_options(int argc, const char* argv[])
     { "log-level",     0,  POPT_ARG_INT,    &arg_log_level,      0, "Set the output logging level - OFF=(1), ERROR=(2), WARNING=(4), INFO=(8), PROGRESS=(16)", "mask" },
     { "log-file",      0,  POPT_ARG_STRING, &arg_log_file,       0, "Set the output log file", "file" },
     { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on", "ip" },
-    /*TODO: { "report-interval", 's', POPT_ARG_INT, &arg_interval,       0, "Queue report interval", "seconds" },*/
+    { "queue-test-interval", 'q', POPT_ARG_INT, &arg_queue_test_interval, 0, "Queue depth test interval for serial mode (dflt=10000)", "milliseconds" },
     { "address",      'm', POPT_ARG_STRING, &arg_ip,             0, "IP address", "ip" },
     { "join-group",   'g', POPT_ARG_INT,    &arg_join_group,     0, "Join multicast group", "0/1" },
     { "journal-type", 'j', POPT_ARG_STRING, &arg_journ_type,     0, "Journal type", "{" ARG_GZ "," ARG_FILE "}" },

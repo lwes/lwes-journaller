@@ -16,6 +16,16 @@
 #include <time.h>
 #include "header.h"
 
+/* used to differentiate how we get a rotation signal, either via an event
+ * or via a signal of some sort or we haven't yet for the current period.
+ * For the moment, there isn't a way to clean set that a signal caused
+ * the rotation, but as this only controls one printout, I'm just using
+ * 2 states for now
+ */
+typedef enum {
+    LJ_RT_NONE, LJ_RT_EVENT
+} lj_rotation_t;
+
 struct enqueuer_stats {
   long long socket_errors_since_last_rotate;
 
@@ -55,6 +65,7 @@ struct dequeuer_stats {
   time_t last_rotate;
 
   char latest_rotate_header[HEADER_LENGTH] ; /* Of the Command::Rotate that was acted on */
+  lj_rotation_t rotation_type;
 };
 
 unsigned long long time_in_milliseconds (void);
@@ -63,6 +74,7 @@ int enqueuer_stats_ctor (struct enqueuer_stats* this_stats);
 void stats_enqueuer_rotate (struct enqueuer_stats* this_stats);
 void enqueuer_stats_record_socket_error (struct enqueuer_stats* this_stats);
 void enqueuer_stats_record_datagram (struct enqueuer_stats* this_stats, int bytes);
+void enqueuer_stats_erase_datagram (struct enqueuer_stats* this_stats, int bytes);
 void enqueuer_stats_rotate (struct enqueuer_stats* this_stats);
 void enqueuer_stats_report (struct enqueuer_stats* this_stats);
 void stats_flush (void);

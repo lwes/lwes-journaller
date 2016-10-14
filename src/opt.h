@@ -16,7 +16,7 @@
 extern int            arg_args;
 extern char*          arg_basename;
 extern const char*    arg_interface;
-/*TODO: extern int      arg_interval;*/
+extern int            arg_queue_test_interval;
 extern const char*    arg_ip;
 extern int            arg_join_group;
 extern char**         arg_journalls;

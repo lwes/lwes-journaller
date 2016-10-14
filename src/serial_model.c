@@ -37,9 +37,19 @@ struct enqueuer_stats    est;
 struct dequeuer_stats    dst;
 unsigned long long       tm;
 struct lwes_emitter*     emitter   = NULL;
+/* these are used for doing a depth test, which every depth_dtm milliseconds
+ * sends an event SERIAL_DEPTH_COMMAND to this journaller, and later takes
+ * that and uses it to estimate how many events were in the operating system
+ * queue
+ */
 unsigned long long       depth_tm  = 0;
-const unsigned long long depth_dtm = 10000;
+unsigned long long       depth_dtm = 10000;
+/* count is the total number of events received by this journaller */
 unsigned long long       count     = 0;
+/* pending is the number of events received between sending and receiving
+ * a queue depth test event.  It represents the number of events in 
+ * the recv buffer of the operating system.
+ */
 unsigned long long       pending   = 0;
 
 static void serial_open_journal(void);
@@ -48,27 +58,29 @@ static void serial_ctor(void)
 {
   install_signal_handlers();
   install_rotate_signal_handlers();
-  
+
+  depth_dtm = arg_queue_test_interval;
+
   if ( enqueuer_stats_ctor (&est) < 0 )
     {
       LOG_ER("Failed to create initialize enqueuer stats.\n");
       exit(EXIT_FAILURE);
     }
-  
+
   if ( dequeuer_stats_ctor (&dst) < 0 )
     {
       LOG_ER("Failed to create initialize dequeuer stats.\n");
       exit(EXIT_FAILURE);
     }
-  
+
   memset(buf, 0, BUFLEN);           /* Clear the message. */
-  
+
   if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
     {
       LOG_ER("Failed to create xport object.\n");
       exit(EXIT_FAILURE);
     }
-  
+
   if (arg_njournalls != 1)
     {
       LOG_ER("Expected 1 journal name pattern, but found %d\n", arg_njournalls);
@@ -81,7 +93,7 @@ static void serial_ctor(void)
       LOG_ER("Failed to create journal object for \"%s\".\n", arg_journalls[0]);
       exit(EXIT_FAILURE);
     }
-  
+
   serial_open_journal();
 
   emitter = lwes_emitter_create( (LWES_CONST_SHORT_STRING) arg_ip,
@@ -150,41 +162,37 @@ static int serial_read(void)
 
 static int serial_handle_depth_test()
 {
-  if (toknam_eq((unsigned char *)buf + HEADER_LENGTH, (unsigned char *)SERIAL_DEPTH_COMMAND))
+  /* check for the serial depth event */
+  if (toknam_eq((unsigned char *)buf + HEADER_LENGTH,
+                (unsigned char *)SERIAL_DEPTH_COMMAND))
     {
       struct lwes_event_deserialize_tmp event_tmp;
-      struct lwes_event_enumeration     keys;
-      LWES_CONST_SHORT_STRING           key;
-      LWES_TYPE                         type;
       int                               bytes_read;
       struct lwes_event*                event = lwes_event_create_no_name(NULL);
-      
-      bytes_read = lwes_event_from_bytes(event, (LWES_BYTE_P)&buf[HEADER_LENGTH],
-                                         buflen-HEADER_LENGTH, 0, &event_tmp);
+
+      /* don't include these internal events in our stats */
+      enqueuer_stats_erase_datagram(&est, buflen);
+
+      /* we should have one, so deserialize it */
+      bytes_read = lwes_event_from_bytes(event,
+                                         (LWES_BYTE_P)&buf[HEADER_LENGTH],
+                                         buflen-HEADER_LENGTH,
+                                         0, &event_tmp);
       if (bytes_read != buflen-HEADER_LENGTH)
         {
           LOG_ER("Only able to read %d bytes; expected %d\n", bytes_read, buflen);
         }
-      else if (!lwes_event_keys(event, &keys))
-        {
-          LOG_ER("Unable to iterate over keys\n");
-        }
       else
         {
-          while (lwes_event_enumeration_next_element(&keys, &key, &type))
-            {
-              if (strncmp("count",key,6)==0)
-                {
-                  LWES_U_INT_64 value;
-                  lwes_event_get_U_INT_64(event, key, &value);
-                  pending  = count - value;
-                  LOG_INF("Depth test reports a buffer length of %lld events.\n", pending);
-                }
-            }
+          /* get the previous count */
+          LWES_U_INT_64 previous_count;
+          lwes_event_get_U_INT_64(event, "count", &previous_count);
+          /* determine the difference and remove one for this special event */
+          pending  = count - previous_count - 1;
+          LOG_INF("Depth test reports a buffer length of %lld events.\n", pending);
         }
-      
+
       lwes_event_destroy(event);
-      
       return 1;
     }
   else
@@ -193,6 +201,10 @@ static int serial_handle_depth_test()
     }
 }
 
+/* this code attempts to determine if there are any events in the operating
+ * system queue by sending an event with the current received count
+ * and later checking it
+ */
 static void serial_send_buffer_depth_test(void)
 {
   struct lwes_event *event =
@@ -208,7 +220,7 @@ static void serial_send_buffer_depth_test(void)
       lwes_emitter_emitto((char*) "127.0.0.1", NULL, arg_port, emitter, event);
     }
   lwes_event_destroy(event);
-  
+
   depth_tm = time_in_milliseconds();
 }
 
@@ -216,14 +228,14 @@ static void serial_write(void)
 {
   /* Write the packet out to the journal. */
   int jrn_write_ret = jrn.vtbl->write(&jrn, buf, buflen);
-  
+
   if (jrn_write_ret != buflen)
     {
       LOG_ER("Journal write error -- attempted to write %d bytes, "
              "write returned %d.\n", buflen, jrn_write_ret);
       dequeuer_stats_record_loss(&dst);
     }
-  
+
   dequeuer_stats_record(&dst, buflen, pending);
 }
 
@@ -248,7 +260,12 @@ void serial_model(void)
      */
     if (read_ret != XPORT_INTR )            serial_write();
     /* check for rotation event, or signal's and rotate if necessary */
-    if (header_is_rotate(buf) || gbl_rotate) serial_rotate();
+    if (header_is_rotate(buf)) {
+      memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
+      dst.rotation_type = LJ_RT_EVENT;
+      gbl_rotate = 1;
+    }
+    if (gbl_rotate) serial_rotate();
     /* maybe send depth test */
     if (tm >= depth_tm + depth_dtm) serial_send_buffer_depth_test();
   }

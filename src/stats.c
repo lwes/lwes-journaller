@@ -62,6 +62,7 @@ int dequeuer_stats_ctor (struct dequeuer_stats* st)
   st->start_time = time (NULL);
   st->hiq_start = st->start_time;
   st->last_rotate = st->start_time;
+  st->rotation_type = LJ_RT_NONE;
 
   return 0;
 }
@@ -77,6 +78,14 @@ void enqueuer_stats_record_datagram (struct enqueuer_stats* st, int bytes)
   st->bytes_received_total             += bytes;
   ++st->packets_received_since_last_rotate;
   ++st->packets_received_total;
+}
+
+void enqueuer_stats_erase_datagram (struct enqueuer_stats* st, int bytes)
+{
+  st->bytes_received_since_last_rotate -= bytes;
+  st->bytes_received_total             -= bytes;
+  --st->packets_received_since_last_rotate;
+  --st->packets_received_total;
 }
 
 void dequeuer_stats_record (struct dequeuer_stats* st, int bytes, int pending)
@@ -168,7 +177,7 @@ void enqueuer_stats_rotate(struct enqueuer_stats* st)
           st->socket_errors_since_last_rotate);
 
   LOG_INF("Events read since last rotate:\n");
-  LOG_INF(" %lld bytes, %lld packets in this journal.\n",
+  LOG_INF(" %lld bytes, %lld packets received.\n",
           st->bytes_received_since_last_rotate,
           st->packets_received_since_last_rotate);
   uptime = now - st->last_rotate;
@@ -218,9 +227,11 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
           st->packets_written_in_burst_since_last_rotate,
           st->bytes_written_in_burst_since_last_rotate);
 
-  LOG_INF("Command::Rotate from IP %s traversed the queue in %ld ms\n",
-          header_sender_ip_formatted(st->latest_rotate_header),
-          time_in_milliseconds()-header_receipt_time(st->latest_rotate_header));
+  if (st->rotation_type == LJ_RT_EVENT) {
+    LOG_INF("Command::Rotate from IP %s traversed the queue in %ld ms\n",
+            header_sender_ip_formatted(st->latest_rotate_header),
+            time_in_milliseconds()-header_receipt_time(st->latest_rotate_header));
+  }
 
   LOG_INF("Dequeuer stats summary v2:\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%d\t%d\t%d\t%d\t%lld\t%lld\t%d\n",
           now, st->loss_since_last_rotate,
@@ -240,6 +251,7 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
   st->bytes_written_in_burst_since_last_rotate = 0LL;
   st->loss_since_last_rotate = 0LL;
   st->last_rotate = now;
+  st->rotation_type = LJ_RT_NONE;
 }
 
 void enqueuer_stats_report(struct enqueuer_stats* st)

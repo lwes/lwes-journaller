@@ -169,6 +169,7 @@ void* queue_to_journal(void* arg)
         { // Command::Rotate
           // is it a new enough Command::Rotate, or masked out?
           memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
+          dst.rotation_type = LJ_RT_EVENT;
           gbl_rotate = 1;
         }
 
