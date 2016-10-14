@@ -44,7 +44,6 @@ int header_is_rotate (void* buf)
 {
   return toknam_eq((unsigned char *)buf + HEADER_LENGTH,
                    (unsigned char *)ROTATE_COMMAND);
-  LOG_PROG("Command::Rotate message received.\n");
 }
 
 void header_fingerprint(void* buf, struct packet_check* pc)
