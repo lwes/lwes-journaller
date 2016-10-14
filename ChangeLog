@@ -1,3 +1,7 @@
+Version 0.5.0 (anthonym)
+* fix various stats output from serial mode journaller
+* make lwes-journal-stats useful
+
 Version 0.4.1 (anthonym)
 * link to other github based releases
 
