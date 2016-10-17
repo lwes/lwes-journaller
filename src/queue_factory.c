@@ -35,6 +35,10 @@ int queue_factory (struct queue* this_queue)
           LOG_ER("No SysV SHM support.\n");
           return -1;
         }
+      else
+        {
+          LOG_INF("Using SysV MsgQ.\n");
+        }
     }
   else if ( strcmp(arg_queue_type, ARG_MQ) == 0 )
     {
@@ -43,6 +47,10 @@ int queue_factory (struct queue* this_queue)
         {
           LOG_ER("No POSIX mqueue support.\n");
           return -1;
+        }
+      else
+        {
+          LOG_INF("Using POSIX mqueue.\n");
         }
     }
   else

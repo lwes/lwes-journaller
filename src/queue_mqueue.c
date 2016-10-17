@@ -98,7 +98,6 @@ static int xopen (struct queue* this_queue, int flags)
             }
         }
     }
-
   return 0;
 }
 

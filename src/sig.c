@@ -87,7 +87,7 @@ void install_signal_handlers()
 
 void install_rotate_signal_handlers()
 {
-  LOG_PROG("Installing rotate signal handlers.\n");
+  LOG_INF("Installing rotate signal handlers.\n");
 
   /* This one triggers a journal rotate. */
   install(SIGHUP, rotate_signal_handler);

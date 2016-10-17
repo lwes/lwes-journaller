@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([lwes-journaller], [0.5.1], [lwes-devel@lists.sourceforge.net])
+AC_INIT([lwes-journaller], [0.5.2], [lwes-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([foreign])
 
 dnl Determine the host type for the host specific inclusion below
@@ -46,7 +46,7 @@ AM_PROG_LIBTOOL
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(fcntl.h limits.h sys/time.h unistd.h getopt.h)
+AC_CHECK_HEADERS(fcntl.h limits.h sys/time.h unistd.h getopt.h sched.h)
 AC_CHECK_HEADER(valgrind/valgrind.h,
                 AC_DEFINE([HAVE_VALGRIND_HEADER],
                           [1],

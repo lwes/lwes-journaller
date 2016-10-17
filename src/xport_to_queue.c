@@ -73,32 +73,34 @@ void* xport_to_queue(void* arg)
   /* Read a packet from the transport, write it to the queue. */
   while ( ! gbl_done )
     {
-      int xpt_read_ret;
       int que_write_ret;
 
       unsigned long long tm;
       unsigned long addr;
       short port;
-
-      if ( (xpt_read_ret = xpt.vtbl->read(&xpt,
-                                          buf + HEADER_LENGTH,
-                                          bufsiz - HEADER_LENGTH,
-                                          &addr, &port)) < 0 )
+      int xpt_read_ret = xpt.vtbl->read(&xpt,
+                                        buf + HEADER_LENGTH,
+                                        bufsiz - HEADER_LENGTH,
+                                        &addr, &port);
+      if (xpt_read_ret >= 0 )
         {
+          tm = time_in_milliseconds();
+          enqueuer_stats_record_datagram(&est, xpt_read_ret + HEADER_LENGTH);
+          header_add(buf, xpt_read_ret, tm, addr, port);
+        }
+      else if (xpt_read_ret == XPORT_INTR)
+        {
+          LOG_INF("Received XPORT_INTR\n");
+          continue;
+        }
+      else
+        {
+          LOG_INF("Received other interruption\n");
           enqueuer_stats_record_socket_error(&est);
           continue;
         }
-      tm = time_in_milliseconds();
 
-      enqueuer_stats_record_datagram(&est,xpt_read_ret);
-
-      /* Return info about packet read. */
-      LOG_PROG("Read %d bytes\n", xpt_read_ret);
-      LOG_PROG("From %08lx:%04x.\n", addr, port&0xffff);
-
-      header_add(buf, xpt_read_ret, tm, addr, port);
-
-      if ( header_is_rotate (buf) )
+      if ( header_is_rotate (buf) || gbl_rotate )
         { // Command::Rotate: here we just collect some stats.
           enqueuer_stats_rotate(&est);
           stats_flush(); /* need to flush here, as this should
@@ -142,11 +144,11 @@ static void skd()
     {
       PERROR("sched_setscheduler");
       LOG_WARN("Increasing thread priority failed"
-               ", will run with standard priorities");
+               ", will run with standard priorities\n");
     }
   else
     {
-      LOG_WARN("Running with FIFO priority");
+      LOG_INF("Running with FIFO priority\n");
     }
 }
 #else

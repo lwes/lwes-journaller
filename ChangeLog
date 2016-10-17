@@ -1,3 +1,8 @@
+Version 0.5.2 (anthonym)
+* make sure to check for sched.h
+* some additional convenience logging
+* make sure to output stats for thread model
+
 Version 0.5.1 (anthonym)
 * forgot libut in dist
 

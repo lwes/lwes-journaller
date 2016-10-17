@@ -203,7 +203,7 @@ static int xread (struct xport* this_xport, void* buf, size_t count,
 
   LOG_PROG("about to call recvfrom().\n");
 
-  if ( (recvfrom_ret = recvfrom(ppriv->fd, buf, count, 0, 
+  if ( (recvfrom_ret = recvfrom(ppriv->fd, buf, count, 0,
                                 (struct sockaddr*)&sender_ip_addr,
                                 &sender_ip_socket_size)) < 0 )
     {
