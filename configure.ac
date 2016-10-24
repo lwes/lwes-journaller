@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([lwes-journaller], [0.5.2], [lwes-devel@lists.sourceforge.net])
+AC_INIT([lwes-journaller], [1.0.0], [lwes-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([foreign])
 
 dnl Determine the host type for the host specific inclusion below
@@ -40,7 +40,6 @@ AM_CONFIG_HEADER(src/config.h)
 
 dnl -- make sure we have a C compiler and libtool
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_LIBTOOL
 
 dnl Checks for header files.
@@ -58,6 +57,9 @@ AC_CHECK_HEADER(pthread.h,
    AC_DEFINE([HAVE_PTHREAD_H], [1], [Define if <pthread.h> is there])
    WITH_THREADS="1"]))
 AC_SUBST(THREAD_LIBS)
+
+AX_PTHREAD_SET_NAME
+
 AC_CHECK_HEADER(zlib.h,
   AC_CHECK_LIB(z, gzopen,[
    Z_LIBS="-lz"
@@ -67,7 +69,7 @@ AC_CHECK_HEADER(zlib.h,
 AC_SUBST(Z_LIBS)
 
 dnl Check for LWES installed
-PKG_CHECK_MODULES([LWES], [lwes-0 >= 0.23.1])
+PKG_CHECK_MODULES([LWES], [lwes-1 >= 1.0.0])
 AC_SUBST(LWES_CFLAGS)
 AC_SUBST(LWES_LIBS)
 
@@ -75,7 +77,7 @@ dnl Check for mondemand installed, if requested
 AC_ARG_WITH([mondemand], AS_HELP_STRING([--with-mondemand],
                           [Build with support for mondemand logging and statistics (default: disabled)]))
 if test "x$with_mondemand" == "xyes"; then
-  PKG_CHECK_MODULES([MONDEMAND], [mondemand-4 >= 4.3.1])
+  PKG_CHECK_MODULES([MONDEMAND], [mondemand-4 >= 4.4.2])
   AC_SUBST(MONDEMAND_CFLAGS)
   AC_SUBST(MONDEMAND_LIBS)
   AC_DEFINE(HAVE_MONDEMAND, 1, [System supports mondemand])

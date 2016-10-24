@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -36,14 +37,12 @@ int rename_journal(const char* path, time_t* last_rotate)
   time_t now = time(NULL);  /* get current time */
   struct tm tm_now;
 
-#ifndef WIN32 //TODO: someday figure out localtime_r() on WIN32, but not needed now
   if ( strftime(timebfr, sizeof(timebfr), "%Y%m%d%H%M%S",
                 localtime_r(&now, &tm_now)) == 0 )
     {
       LOG_ER("strftime failed in rename_journal(\"%s\", ...)\n", path);
       return -1;
     }
-#endif
 
   if ( 0 != (ext = strrchr(path, '.')) )
     {
@@ -60,10 +59,7 @@ int rename_journal(const char* path, time_t* last_rotate)
            base, timebfr, *last_rotate, now, ext);
   *last_rotate = now;
 
-  if ( gbl_rotate )
-    {
-      LOG_INF("Naming new journal file \"%s\".\n", newpath);
-    }
+  LOG_INF("Naming new journal file \"%s\".\n", newpath);
 
   if ( rename(path, newpath) < 0 )
     {

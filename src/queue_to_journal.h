@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -12,8 +13,7 @@
 
 #ifndef QUEUE_TO_JOURNAL_DOT_H
 #define QUEUE_TO_JOURNAL_DOT_H
-#include <sys/types.h>
 
-void* queue_to_journal (void* arg);
+int queue_to_journal (void);
 
 #endif /* QUEUE_TO_JOURNAL_DOT_H */

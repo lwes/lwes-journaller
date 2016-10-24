@@ -22,6 +22,7 @@ commonsource = \
   journal_factory.c \
   journal_file.c \
   journal_gz.c \
+  process_model.c \
   queue_factory.c \
   queue_mqueue.c \
   queue_msg.c \
@@ -31,12 +32,12 @@ commonsource = \
   xport_to_queue.c \
   xport_udp.c \
   serial_model.c \
+  thread_model.c \
   stats.c \
   time_utils.c \
   rename_journal.c
 
 myheaderfiles =       \
-  global.h            \
   header.h            \
   journal_file.h      \
   journal_gz.h        \
@@ -46,12 +47,14 @@ myheaderfiles =       \
   marshal.h           \
   opt.h               \
   perror.h            \
+  process_model.h     \
   queue.h             \
   queue_mqueue.h      \
   queue_msg.h         \
   queue_to_journal.h  \
   rename_journal.h    \
   serial_model.h      \
+  thread_model.h      \
   sig.h               \
   stats.h             \
   time_utils.h        \
@@ -63,7 +66,7 @@ journallersource = \
   lwes-journaller.c
 
 rotatesourcefiles = \
-  journaller_rotate_logs.c
+  lwes-journaller-rotate.c
 
 queuejournalsources = \
   queue_to_journal_main.c

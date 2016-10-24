@@ -1,3 +1,14 @@
+/*======================================================================*
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
+ *                                                                      *
+ * Licensed under the New BSD License (the "License"); you may not use  *
+ * this file except in compliance with the License.  Unless required    *
+ * by applicable law or agreed to in writing, software distributed      *
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT        *
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.     *
+ * See the License for the specific language governing permissions and  *
+ * limitations under the License. See accompanying LICENSE file.        *
+ *======================================================================*/
 #define _GNU_SOURCE
 #include <limits.h>
 #include <signal.h>
@@ -36,7 +47,8 @@ static bool check_num_and_length (const char *word, const size_t len)
     }
   else
     {
-      for (unsigned int i = 0 ; i < len; i++)
+      unsigned int i = 0;
+      for (i = 0 ; i < len; i++)
         {
           if (word[i] < '0' || word[i] > '9')
             {
@@ -101,7 +113,8 @@ int main(int argc, char **argv)
   const char *sep = ".";
   const char *empty = "";
   char *part;
-  for (int i = 0; i < MAX_FILE_PARTS; i++)
+  int i;
+  for (i = 0; i < MAX_FILE_PARTS; i++)
     {
       file_parts[i] = empty;
     }
@@ -109,7 +122,7 @@ int main(int argc, char **argv)
     {
       file_parts[file_part_count++] = part;
     }
-  for (int i = 0 ; i < file_part_count; i++)
+  for (i = 0 ; i < file_part_count; i++)
     {
       printf ("part[%d] = %s\n",i,file_parts[i]);
     }
@@ -119,7 +132,7 @@ int main(int argc, char **argv)
       if (check_num_and_length (file_parts[file_part_count-2], 10)
           && check_num_and_length (file_parts[file_part_count-3], 10))
         {
-          for (int i = 0; i < (file_part_count-3); i++)
+          for (i = 0; i < (file_part_count-3); i++)
             {
               strcat (newfile, file_parts[i]);
               strcat (newfile, sep);
@@ -129,7 +142,7 @@ int main(int argc, char **argv)
         {
           fprintf (stderr,
                    "WARNING: journal file name format is non-standard\n");
-          for (int i = 0; i < (file_part_count-1); i++)
+          for (i = 0; i < (file_part_count-1); i++)
             {
               strcat (newfile, file_parts[i]);
               strcat (newfile, sep);

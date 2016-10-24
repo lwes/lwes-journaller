@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -18,18 +19,15 @@ extern char*          arg_basename;
 extern const char*    arg_interface;
 extern int            arg_queue_test_interval;
 extern const char*    arg_ip;
-extern int            arg_join_group;
 extern char**         arg_journalls;
 extern char*          arg_disk_journals[10];
 extern int            arg_journal_rotate_interval;
 extern char*          arg_journ_name;
 extern const char*    arg_journ_type;
-extern char*          arg_monitor_type;
 extern int            arg_log_level;
 extern const char*    arg_log_file;
 extern int            arg_njournalls;
 extern int            arg_nodaemonize;
-extern int            arg_nreaders;
 extern const char*    arg_pid_file;
 extern int            arg_port;
 extern const char*    arg_proc_type;
@@ -44,6 +42,7 @@ extern int            arg_ttl;
 extern int            arg_journal_uid;
 extern int            arg_version;
 extern const char*    arg_xport;
+extern int            arg_wakup_interval_ms;
 
 #ifdef HAVE_MONDEMAND
 extern const char*    arg_mondemand_host;
@@ -67,6 +66,8 @@ extern const char*    arg_mondemand_program_id;
 
 /* arg_xport: */
 #define ARG_UDP     "udp"
+
+#define WAKEUP_MS 100
 
 void process_options(int argc, const char* argv[]);
 

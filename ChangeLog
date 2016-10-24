@@ -1,3 +1,11 @@
+Version 1.0.0 (anthonym)
+* rewrote xport_udp to use an lwes_net_connection
+* separated out thread and process models
+* fixed signal handling in thread model
+* named threads with pthread_setname_np when available
+* fixed mondemand emission in threading/process cases
+* removed multiple threads/processes reading from xport
+
 Version 0.5.2 (anthonym)
 * make sure to check for sched.h
 * some additional convenience logging

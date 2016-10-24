@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -37,29 +38,29 @@ static int rotate(struct journal* jrn, int jcurr)
   unsigned long long t0 = time_in_milliseconds(), t1;
 
   dequeuer_stats_rotate(&dst);
-  stats_flush(); /* need to flush here, as this should be it's own process so
-                    would have it's own mondemand structure */
+  dequeuer_stats_flush();
+
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
       LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);
       exit(EXIT_FAILURE);
     }
-  
+
   jcurr = (jcurr + 1) % arg_njournalls;
-  
+
   if ( jrn[jcurr].vtbl->open(&jrn[jcurr], O_WRONLY) < 0 )
     {
       LOG_ER("Failed to open the journal \"%s\".\n", arg_journalls[jcurr]);
       exit(EXIT_FAILURE);
     }
-  
+
   t1 = time_in_milliseconds();
   LOG_INF("Rotated in %0.2f seconds\n", (t1-t0)/1000000.);
-  
+
   return jcurr;
 }
 
-void* queue_to_journal(void* arg)
+int queue_to_journal(void)
 {
   struct queue que;
   struct journal* jrn;
@@ -71,13 +72,8 @@ void* queue_to_journal(void* arg)
   unsigned long long t0, receive_time, max_receive_time=0,
       total_receive_time=0, write_time, max_write_time=0, total_write_time=0;
 
-  (void)arg; /* appease -Wall -Werror */
-
   dequeuer_stats_ctor(&dst);
 
-  install_signal_handlers();
-  install_rotate_signal_handlers(); /* This is the process or thread
-                                       that does the rotate. */
   /* Create queue object. */
   if ( (queue_factory(&que) < 0) || (que.vtbl->open(&que, O_RDONLY) < 0) )
     {
@@ -119,15 +115,14 @@ void* queue_to_journal(void* arg)
     }
 
   /* Read a packet from the queue, write it to the journal. */
-  while ( 1 )
+  while ( ! gbl_done )
     {
       int que_read_ret;
       int jrn_write_ret;
 
       /* If we have a pending rotate to perform, do it now. */
-      if ( gbl_rotate )
-        { // <gbl_rotate>
-
+      if ( gbl_rotate_dequeue )
+        {
           LOG_INF("Maximum receive time was %0.2f seconds;"
                   " total receive time was %0.2f seconds\n",
                   max_receive_time/1000000., total_receive_time/1000000.);
@@ -142,8 +137,8 @@ void* queue_to_journal(void* arg)
           total_receive_time = 0;
           total_write_time = 0;
 
-          gbl_rotate = 0;
-        } // </gbl_rotate>
+          gbl_rotate_dequeue = 0;
+        }
 
       t0 = time_in_milliseconds();
       if ( (que_read_ret = que.vtbl->read(&que, buf, bufsiz, &pending)) < 0 )
@@ -155,7 +150,7 @@ void* queue_to_journal(void* arg)
       receive_time = time_in_milliseconds() - t0;
       if ( max_receive_time < receive_time ) max_receive_time = receive_time;
       total_receive_time += receive_time;
-      
+
       LOG_PROG("Read %d bytes from queue (%d pending).\n",
                que_read_ret, pending);
       if (write_pending)
@@ -170,7 +165,8 @@ void* queue_to_journal(void* arg)
           // is it a new enough Command::Rotate, or masked out?
           memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
           dst.rotation_type = LJ_RT_EVENT;
-          gbl_rotate = 1;
+          gbl_rotate_dequeue = 1;
+          gbl_rotate_enqueue = 1;
         }
 
       t0 = time_in_milliseconds();
@@ -187,11 +183,11 @@ void* queue_to_journal(void* arg)
       write_time = time_in_milliseconds() - t0;
       if ( max_write_time < write_time ) max_write_time = write_time;
       total_write_time += write_time;
-    } /* while ( ! gdb_done) */
+    } /* while ( ! gbl_done) */
 
   dequeuer_stats_rotate(&dst);
-  stats_flush(); /* need to flush here, as this should be it's own process so
-                    would have it's own mondemand structure */
+  dequeuer_stats_flush();
+
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
       LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);

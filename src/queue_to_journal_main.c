@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -12,13 +13,15 @@
 
 #include "config.h"
 
-#include "queue_to_journal.h"
-
 #include "opt.h"
+#include "queue_to_journal.h"
+#include "sig.h"
+
 
 int main(int argc, const char* argv[])
 {
+  install_signal_handlers();
+  install_rotate_signal_handlers();
   process_options(argc, argv);
-  queue_to_journal(0);
-  return 0;
+  return queue_to_journal();
 }

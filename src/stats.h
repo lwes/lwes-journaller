@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -77,12 +78,13 @@ void enqueuer_stats_record_datagram (struct enqueuer_stats* this_stats, int byte
 void enqueuer_stats_erase_datagram (struct enqueuer_stats* this_stats, int bytes);
 void enqueuer_stats_rotate (struct enqueuer_stats* this_stats);
 void enqueuer_stats_report (struct enqueuer_stats* this_stats);
-void stats_flush (void);
+void enqueuer_stats_flush (void);
 
 int dequeuer_stats_ctor (struct dequeuer_stats* this_stats);
 void dequeuer_stats_record (struct dequeuer_stats* this_stats, int bytes, int pending);
 void dequeuer_stats_record_loss (struct dequeuer_stats* this_stats);
 void dequeuer_stats_rotate (struct dequeuer_stats* this_stats);
 void dequeuer_stats_report (struct dequeuer_stats* this_stats);
+void dequeuer_stats_flush (void);
 
 #endif /* STATS_DOT_H */

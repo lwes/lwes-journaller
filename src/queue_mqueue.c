@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -141,17 +142,10 @@ static int xread (struct queue* this_queue, void* buf,
   LOG_PROG("about to call mq_receive().  gbl_done=%d\n", gbl_done);
 
   /* use blocking reads unless we're shutting down. */
-  if (gbl_done)
-  {
-    struct timespec time_buf = { time(NULL)+1, 500000000 };
-    mq_rec_rtrn = mq_timedreceive (ppriv->mq, buf, count, &pri, &time_buf);
-  }
-  else
-  {
-    mq_rec_rtrn = mq_receive (ppriv->mq, buf, count, &pri);
-  }
+  struct timespec time_buf = { time(NULL), arg_wakup_interval_ms * 1000000 };
+  mq_rec_rtrn = mq_timedreceive (ppriv->mq, buf, count, &pri, &time_buf);
 
-  if (mq_rec_rtrn  < 0 )
+  if (mq_rec_rtrn < 0 )
     {
       LOG_PROG("errno: %d %s\n", errno, strerror(errno));
       switch ( errno )

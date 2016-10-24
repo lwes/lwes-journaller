@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -14,10 +15,12 @@
 #define SIG_DOT_H
 
 extern volatile int gbl_done;
-extern volatile int gbl_rotate;
+extern volatile int gbl_rotate_enqueue;
+extern volatile int gbl_rotate_dequeue;
 extern volatile int gbl_rotate_log;
 
 extern void install_signal_handlers (void);
 extern void install_rotate_signal_handlers (void);
+extern void install_interval_rotate_handlers (int should_install_handler);
 
 #endif /* SIG_DOT_H */

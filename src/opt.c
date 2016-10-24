@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -30,9 +31,6 @@
 /* Base program name from argv[0]. */
 char*        arg_basename      = 0;
 
-/* Number of network reader processes/threads to run. */
-int          arg_nreaders      = 1;
-
 /* Set default queue type, types in preferred order. */
 #if HAVE_MQUEUE_H
 const char*  arg_queue_type    = ARG_MQ;
@@ -46,14 +44,12 @@ const char*  arg_queue_type    = ARG_MSG;
 const char*  arg_queue_name    = "/lwes_journal";
 int          arg_queue_max_sz  = 64*1024 - 1;
 int          arg_queue_max_cnt = 10000;
-int          arg_join_group;
 
 #if HAVE_LIBZ
 const char*  arg_journ_type    = ARG_GZ;
 #else
 const char*  arg_journ_type    = ARG_FILE;
 #endif
-char*  arg_monitor_type        = NULL ;
 
 #if HAVE_PTHREAD_H
 const char*  arg_proc_type     = ARG_THREAD;
@@ -65,8 +61,7 @@ const char*  arg_proc_type     = ARG_PROCESS;
 const char*  arg_xport         = "udp";
 const char*  arg_ip            = "224.0.0.69";
 int          arg_port          = 9191;
-const char*  arg_interface     = "";
-int          arg_join_group    = 1;
+const char*  arg_interface     = NULL;
 int          arg_sockbuffer    = 16*1024*1024;
 int          arg_ttl           = 16 ;
 
@@ -99,6 +94,7 @@ char*  arg_disk_journals[10];
  * round intervals starting at beginning of day)
  */
 int    arg_journal_rotate_interval = 0;
+int    arg_wakup_interval_ms = WAKEUP_MS;
 
 int    arg_nodaemonize         = 0;
 
@@ -125,11 +121,8 @@ void process_options(int argc, const char* argv[])
     { "interface",    'I', POPT_ARG_STRING, &arg_interface,      0, "Network interface to listen on", "ip" },
     { "queue-test-interval", 'q', POPT_ARG_INT, &arg_queue_test_interval, 0, "Queue depth test interval for serial mode (dflt=10000)", "milliseconds" },
     { "address",      'm', POPT_ARG_STRING, &arg_ip,             0, "IP address", "ip" },
-    { "join-group",   'g', POPT_ARG_INT,    &arg_join_group,     0, "Join multicast group", "0/1" },
     { "journal-type", 'j', POPT_ARG_STRING, &arg_journ_type,     0, "Journal type", "{" ARG_GZ "," ARG_FILE "}" },
     { "journal-rotate-interval", 'i', POPT_ARG_INT, &arg_journal_rotate_interval,     0, "Journal rotation interval in seconds (default off)", 0 },
-    { "monitor-type", 'j', POPT_ARG_STRING, &arg_monitor_type,   0, "Monitor type", 0 },
-    { "nreaders",     'r', POPT_ARG_INT,    &arg_nreaders,       0, "Number of network reading threads, dflt=1, max=5", 0 },
     { "pid-file",     'f', POPT_ARG_STRING, &arg_pid_file,       0, "PID file, dflt=NULL", "path" },
     { "port",         'p', POPT_ARG_INT,    &arg_port,           0, "Port number to listen on, dflt=9191", "short" },
     { "thread-type",  't', POPT_ARG_STRING, &arg_proc_type,      0, "Threading model, '" ARG_THREAD "' or '" ARG_PROCESS "' or '" ARG_SERIAL "', dflt="
@@ -147,6 +140,7 @@ void process_options(int argc, const char* argv[])
     { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },
     { "ttl",           0,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
+    { "wakeup", 'w', POPT_ARG_INT, &arg_wakup_interval_ms, 0, "How often to break checking for signals", "milliseconds" },
     { "user",          0,  POPT_ARG_STRING, &arg_journal_user,   0, "Owner of journal files", "user" },
     { "version",      'v', POPT_ARG_NONE,   &arg_version,        0, "Display version, then exit", 0 },
     { "xport-type",   'x', POPT_ARG_STRING, &arg_xport,          0, "Transport, dflt=udp", "{" ARG_UDP ", ...}" },
@@ -297,18 +291,15 @@ void process_options(int argc, const char* argv[])
               "  arg_interface == \"%s\"\n"
               "  arg_ip == \"%s\"\n"
               "  arg_journ_type == \"%s\"\n"
-              "  arg_monitor_type == \"%s\"\n"
               "  arg_pid_file == \"%s\"\n"
               "  arg_proc_type == \"%s\"\n"
               "  arg_queue_name == \"%s\"\n"
               "  arg_queue_type == \"%s\"\n"
               "  arg_xport == \"%s\"\n"
               /*"  arg_interval == %d\n"*/
-              "  arg_join_group == %d\n"
               "  arg_log_level == %s (%d)\n"
               "  arg_log_file == %s\n"
               "  arg_njournalls == %d\n"
-              "  arg_nreaders == %d\n"
               "  arg_port == %d\n"
               "  arg_queue_max_cnt == %d\n"
               "  arg_queue_max_sz == %d\n"
@@ -321,19 +312,16 @@ void process_options(int argc, const char* argv[])
               arg_interface,
               arg_ip,
               arg_journ_type,
-              arg_monitor_type,
               arg_pid_file,
               arg_proc_type,
               arg_queue_name,
               arg_queue_type,
               arg_xport,
               /*TODO: arg_interval,*/
-              arg_join_group,
               log_level_string,
               arg_log_level,
               arg_log_file,
               arg_njournalls,
-              arg_nreaders,
               arg_port,
               arg_queue_max_cnt,
               arg_queue_max_sz,

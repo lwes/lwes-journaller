@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2010, OpenX Inc. All rights reserved.                  *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -58,6 +59,7 @@ static void serial_ctor(void)
 {
   install_signal_handlers();
   install_rotate_signal_handlers();
+  install_interval_rotate_handlers(1);
 
   depth_dtm = arg_queue_test_interval;
 
@@ -112,11 +114,19 @@ static void serial_open_journal(void)
 
 static void serial_close_journal(void)
 {
-  enqueuer_stats_rotate(&est);
-  dequeuer_stats_rotate(&dst);
-  stats_flush(); /* need to flush here, as this should
-                    be it's own process so would have it's
-                    own mondemand structure */
+  if (gbl_done || gbl_rotate_enqueue)
+    {
+      enqueuer_stats_rotate(&est);
+      enqueuer_stats_flush();
+      gbl_rotate_enqueue = 0;
+    }
+
+  if (gbl_done || gbl_rotate_dequeue)
+    {
+      dequeuer_stats_rotate(&dst);
+      dequeuer_stats_flush();
+      gbl_rotate_dequeue = 0;
+    }
 
   if (jrn.vtbl->close(&jrn) < 0) {
     LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[0]);
@@ -128,7 +138,6 @@ static void serial_rotate(void)
 {
   serial_close_journal();
   serial_open_journal();
-  gbl_rotate = 0;
 }
 
 static int serial_read(void)
@@ -249,6 +258,7 @@ void serial_model(void)
   serial_ctor();
 
   do {
+    int is_rotate = 0;
     int read_ret = serial_read();
     /* -1 is an error we don't deal with, so just skip out of the loop */
     if (read_ret == -1)             continue;
@@ -258,14 +268,17 @@ void serial_model(void)
      * write, so write when we are not interrupted, this is for backward
      * compatibility when we didn't do rotation signals correctly here
      */
-    if (read_ret != XPORT_INTR )            serial_write();
+    if (read_ret != XPORT_INTR ) serial_write();
     /* check for rotation event, or signal's and rotate if necessary */
     if (header_is_rotate(buf)) {
       memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
       dst.rotation_type = LJ_RT_EVENT;
-      gbl_rotate = 1;
+      is_rotate = 1;
     }
-    if (gbl_rotate) serial_rotate();
+    if (is_rotate || gbl_rotate_dequeue || gbl_rotate_enqueue) {
+      serial_rotate();
+      is_rotate = 0;
+    }
     /* maybe send depth test */
     if (tm >= depth_tm + depth_dtm) serial_send_buffer_depth_test();
   }

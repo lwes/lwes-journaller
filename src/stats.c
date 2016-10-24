@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -143,8 +144,8 @@ void dequeuer_stats_record_loss (struct dequeuer_stats* st)
 }
 
 
-static void log_rates(log_mask_t level, const char* file, int line, double bps, double pps,
-                      const char* notes)
+static void log_rates(log_mask_t level, const char* file, int line,
+                      double bps, double pps, const char* notes)
 {
   if ( bps > 1000000. )
     {
@@ -197,6 +198,45 @@ void enqueuer_stats_rotate(struct enqueuer_stats* st)
   st->bytes_received_since_last_rotate = 0LL;
   st->packets_received_since_last_rotate = 0LL;
   st->last_rotate = now;
+}
+
+void enqueuer_stats_report(struct enqueuer_stats* st)
+{
+  double rbps, rpps;
+  char startbfr[100];
+  char nowbfr[100];
+
+  struct tm tm_st;
+
+  time_t now = time(NULL);
+  time_t uptime;
+
+  if ( my_strftime(startbfr, sizeof(startbfr),
+                   "%c", localtime_r(&st->start_time, &tm_st)) == 0 )
+    {
+      LOG_ER("strftime failure");
+    }
+
+  if ( my_strftime(nowbfr, sizeof(nowbfr),
+                   "%c", localtime_r(&now, &tm_st)) == 0 )
+    {
+      LOG_ER("strftime failure");
+    }
+
+  uptime = now - st->start_time;
+
+  rbps = (8. * (double)st->bytes_received_total) / (double)uptime;
+  rpps = ((double)st->packets_received_total) / (double)uptime;
+
+  LOG_INF("Total network traffic received:\n");
+  LOG_INF(" %lld bytes, %lld packets.\n",
+          st->bytes_received_total,
+          st->packets_received_total);
+  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps," received");
+}
+
+void enqueuer_stats_flush(void) {
+  mondemand_enqueuer_flush ();
 }
 
 void dequeuer_stats_rotate(struct dequeuer_stats* st)
@@ -254,47 +294,6 @@ void dequeuer_stats_rotate(struct dequeuer_stats* st)
   st->rotation_type = LJ_RT_NONE;
 }
 
-void enqueuer_stats_report(struct enqueuer_stats* st)
-{
-  double rbps, rpps;
-  char startbfr[100];
-  char nowbfr[100];
-
-  struct tm tm_st;
-
-  time_t now = time(NULL);
-  time_t uptime;
-
-  if ( my_strftime(startbfr, sizeof(startbfr),
-                   "%c", localtime_r(&st->start_time, &tm_st)) == 0 )
-    {
-      LOG_ER("strftime failure");
-    }
-
-  if ( my_strftime(nowbfr, sizeof(nowbfr),
-                   "%c", localtime_r(&now, &tm_st)) == 0 )
-    {
-      LOG_ER("strftime failure");
-    }
-
-  uptime = now - st->start_time;
-
-  rbps = (8. * (double)st->bytes_received_total) / (double)uptime;
-  rpps = ((double)st->packets_received_total) / (double)uptime;
-
-  LOG_INF("Total network traffic received:\n");
-  LOG_INF(" %lld bytes, %lld packets.\n",
-          st->bytes_received_total,
-          st->packets_received_total);
-  log_rates(LOG_INFO,__FILE__,__LINE__,rbps,rpps," received");
-}
-
-/* mondemand in serial mode needs only one flush, to avoid global state we'll
- * call this function from a few places */
-void stats_flush (void) {
-  mondemand_flush_both ();
-}
-
 void dequeuer_stats_report(struct dequeuer_stats* st)
 {
   double wbps, wpps;
@@ -329,3 +328,9 @@ void dequeuer_stats_report(struct dequeuer_stats* st)
           st->packets_written_total);
   log_rates(LOG_INFO,__FILE__,__LINE__,wbps,wpps," written");
 }
+
+void dequeuer_stats_flush(void) {
+  mondemand_dequeuer_flush ();
+}
+
+

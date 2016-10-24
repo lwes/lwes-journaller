@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -23,7 +24,8 @@
 #include <stdlib.h>
 
 volatile int gbl_done = 0;
-volatile int gbl_rotate = 0;
+volatile int gbl_rotate_enqueue = 0;
+volatile int gbl_rotate_dequeue = 0;
 volatile int gbl_rotate_log = 0;
 
 static void terminate_signal_handler(int signo)
@@ -34,7 +36,8 @@ static void terminate_signal_handler(int signo)
 static void rotate_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
-  gbl_rotate = 1;
+  gbl_rotate_enqueue = 1;
+  gbl_rotate_dequeue = 1;
 }
 
 static void rotate_log_signal_handler(int signo)
@@ -87,22 +90,27 @@ void install_signal_handlers()
 
 void install_rotate_signal_handlers()
 {
-  LOG_INF("Installing rotate signal handlers.\n");
-
   /* This one triggers a journal rotate. */
   install(SIGHUP, rotate_signal_handler);
 
   /* This one triggers a log rotate. */
   install(SIGUSR1, rotate_log_signal_handler);
+}
 
+void install_interval_rotate_handlers (int should_install_handler)
+{
   if (arg_journal_rotate_interval) {
     struct itimerval timer;
     struct timeval now;
     struct timeval next;
-    if (-1 == gettimeofday (&now, 0)) {
-      PERROR("gettimeofday");
-    }
-    install(SIGALRM, rotate_signal_handler);
+    if (-1 == gettimeofday (&now, 0))
+      {
+        PERROR("gettimeofday");
+      }
+    if (should_install_handler != 0 )
+      {
+        install(SIGALRM, rotate_signal_handler);
+      }
 
     time_to_next_round_interval (now, arg_journal_rotate_interval, &next);
     /* Configure the timer to expire on the next round interval sec... */
@@ -111,9 +119,11 @@ void install_rotate_signal_handlers()
     /* ... and every interval seconds after that. */
     timer.it_interval.tv_sec = arg_journal_rotate_interval;
     timer.it_interval.tv_usec = 0;
+    LOG_INF("rotating every %d seconds\n", arg_journal_rotate_interval);
     /* set an interval timer to alarm for rotation */
-    if (setitimer (ITIMER_REAL, &timer, NULL) < 0) {
-      PERROR("setitimer");
-    }
+    if (setitimer (ITIMER_REAL, &timer, NULL) < 0)
+      {
+        PERROR("setitimer");
+      }
   }
 }

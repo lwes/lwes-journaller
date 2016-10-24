@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2010, OpenX Inc. All rights reserved.                  *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -23,7 +24,8 @@
 
 void mondemand_enqueuer_stats (const struct enqueuer_stats* this_stats, time_t now);
 void mondemand_dequeuer_stats (const struct dequeuer_stats* this_stats, time_t now);
-void mondemand_flush_both (void);
+void mondemand_enqueuer_flush (void);
+void mondemand_dequeuer_flush (void);
 void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf);
 
 #endif

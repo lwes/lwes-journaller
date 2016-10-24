@@ -1,5 +1,5 @@
 /*======================================================================*
- * Copyright (c) 2010, OpenX Inc. All rights reserved.                  *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -17,30 +17,55 @@
 
 #ifdef HAVE_MONDEMAND
 
-struct mondemand_client *client;
+struct mondemand_client *enqueue_client;
+struct mondemand_client *dequeue_client;
 /* set a counter in mondemand.
  * NOTE: we need to drop into the lower level call since the journaller
  * is keeping counters itself, and there's no high level call to set a counter
  * in mondemand
  */
-#define mondemand_inc(x) \
+#define mondemand_inc(client, x) \
   mondemand_stats_perform_op(client, __FILE__, __LINE__, \
                              MONDEMAND_SET, MONDEMAND_COUNTER, \
                              #x, (MondemandStatValue)(stats->x))
 /* set a gauge in mondemand */
-#define mondemand_set(x) mondemand_set_key_by_val(client, #x, (MondemandStatValue)(stats->x))
+#define mondemand_set(client, x) mondemand_set_key_by_val(client, #x, (MondemandStatValue)(stats->x))
 
-static void init()
+/* FIXME: I don't like this, but trying to get serial/thread and process to
+ * all work properly, so lots of code duplication for the moment
+ */
+static void enqueue_init()
 {
-  if (client==NULL && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
+  if (enqueue_client==NULL
+      && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
     {
       struct mondemand_transport *transport = NULL;
-      client = mondemand_client_create(arg_mondemand_program_id);
-      mondemand_set_context(client,"host",arg_mondemand_host);
+      enqueue_client = mondemand_client_create(arg_mondemand_program_id);
+      mondemand_set_context(enqueue_client,"host",arg_mondemand_host);
       transport = mondemand_transport_lwes_create(arg_mondemand_ip,arg_mondemand_port,NULL,0,0);
       if (transport)
         {
-          mondemand_add_transport(client, transport);
+          mondemand_add_transport(enqueue_client, transport);
+        }
+      else
+        {
+          LOG_WARN("Unable to create mondemand transport to connect to %s:%d",arg_mondemand_ip,arg_mondemand_port);
+        }
+    }
+}
+
+static void dequeue_init()
+{
+  if (dequeue_client==NULL
+      && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
+    {
+      struct mondemand_transport *transport = NULL;
+      dequeue_client = mondemand_client_create(arg_mondemand_program_id);
+      mondemand_set_context(dequeue_client,"host",arg_mondemand_host);
+      transport = mondemand_transport_lwes_create(arg_mondemand_ip,arg_mondemand_port,NULL,0,0);
+      if (transport)
+        {
+          mondemand_add_transport(dequeue_client, transport);
         }
       else
         {
@@ -52,41 +77,51 @@ static void init()
 void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
 {
   (void)now; // appease -Wall -Werror
-  init();
-  if (client==NULL) return;
-  mondemand_set(socket_errors_since_last_rotate);
-  mondemand_inc(bytes_received_total);
-  mondemand_set(bytes_received_since_last_rotate);
-  mondemand_inc(packets_received_total);
-  mondemand_set(packets_received_since_last_rotate);
+  enqueue_init();
+  if (enqueue_client==NULL) return;
+  mondemand_set(enqueue_client, socket_errors_since_last_rotate);
+  mondemand_inc(enqueue_client, bytes_received_total);
+  mondemand_set(enqueue_client, bytes_received_since_last_rotate);
+  mondemand_inc(enqueue_client, packets_received_total);
+  mondemand_set(enqueue_client, packets_received_since_last_rotate);
 }
 
 void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
 {
-  init();
   (void)now; // appease -Wall -Werror
-  if (client==NULL) return;
-  mondemand_set(loss_since_last_rotate);
-  mondemand_inc(bytes_written_total);
-  mondemand_set(bytes_written_since_last_rotate);
-  mondemand_inc(packets_written_total);
-  mondemand_set(packets_written_since_last_rotate);
-  mondemand_inc(bytes_written_in_burst);
-  mondemand_inc(packets_written_in_burst);
-  mondemand_set(hiq);
-  mondemand_set(hiq_start);
-  mondemand_set(hiq_last);
-  mondemand_set(hiq_since_last_rotate);
-  mondemand_set(bytes_written_in_burst_since_last_rotate);
-  mondemand_set(packets_written_in_burst_since_last_rotate);
-  mondemand_set(start_time);
-  mondemand_set(last_rotate);
+  dequeue_init();
+  if (dequeue_client==NULL) return;
+  mondemand_set(dequeue_client, loss_since_last_rotate);
+  mondemand_inc(dequeue_client, bytes_written_total);
+  mondemand_set(dequeue_client, bytes_written_since_last_rotate);
+  mondemand_inc(dequeue_client, packets_written_total);
+  mondemand_set(dequeue_client, packets_written_since_last_rotate);
+  mondemand_inc(dequeue_client, bytes_written_in_burst);
+  mondemand_inc(dequeue_client, packets_written_in_burst);
+  mondemand_set(dequeue_client, hiq);
+  mondemand_set(dequeue_client, hiq_start);
+  mondemand_set(dequeue_client, hiq_last);
+  mondemand_set(dequeue_client, hiq_since_last_rotate);
+  mondemand_set(dequeue_client, bytes_written_in_burst_since_last_rotate);
+  mondemand_set(dequeue_client, packets_written_in_burst_since_last_rotate);
+  mondemand_set(dequeue_client, start_time);
+  mondemand_set(dequeue_client, last_rotate);
 }
 
-void mondemand_flush_both (void) {
-  init();
-  if (client==NULL) return;
-  mondemand_flush_stats(client);
+void mondemand_enqueuer_flush (void) {
+  enqueue_init();
+  if (enqueue_client != NULL)
+    {
+      mondemand_flush_stats(enqueue_client);
+    }
+}
+
+void mondemand_dequeuer_flush (void) {
+  dequeue_init();
+  if (dequeue_client != NULL)
+    {
+      mondemand_flush_stats(dequeue_client);
+    }
 }
 
 static int get_mondemand_level (log_level_t level)
@@ -107,6 +142,9 @@ static int get_mondemand_level (log_level_t level)
 void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf)
 {
   const int mondemand_level = get_mondemand_level(level);
+
+  struct mondemand_client *client =
+    (enqueue_client != NULL ? enqueue_client : dequeue_client);
   if (mondemand_level_is_enabled(client, mondemand_level))
   {
     mondemand_log_real(client, fname, lineno, level, MONDEMAND_NULL_TRACE_ID, "%s", buf);
@@ -127,7 +165,10 @@ void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
   (void)now;
 }
 
-void mondemand_flush_both (void) {
+void mondemand_enqueuer_flush (void) {
+}
+
+void mondemand_dequeuer_flush (void) {
 }
 
 void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf)

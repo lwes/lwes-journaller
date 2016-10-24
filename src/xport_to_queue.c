@@ -1,5 +1,6 @@
 /*======================================================================*
  * Copyright (c) 2008, Yahoo! Inc. All rights reserved.                 *
+ * Copyright (c) 2010-2016, OpenX Inc.   All rights reserved.           *
  *                                                                      *
  * Licensed under the New BSD License (the "License"); you may not use  *
  * this file except in compliance with the License.  Unless required    *
@@ -31,17 +32,13 @@ static void skd(void);
 
 struct enqueuer_stats est ;
 
-void* xport_to_queue(void* arg)
+int xport_to_queue(void)
 {
   struct xport xpt;
   struct queue que;
 
   unsigned char* buf = 0;
   size_t bufsiz;
-
-  (void)arg; /* appease -Wall -Werror */
-
-  install_signal_handlers();
 
   if ( arg_rt )
     {
@@ -90,8 +87,7 @@ void* xport_to_queue(void* arg)
         }
       else if (xpt_read_ret == XPORT_INTR)
         {
-          LOG_INF("Received XPORT_INTR\n");
-          continue;
+          ;
         }
       else
         {
@@ -100,28 +96,31 @@ void* xport_to_queue(void* arg)
           continue;
         }
 
-      if ( header_is_rotate (buf) || gbl_rotate )
+      if ( header_is_rotate (buf) || gbl_rotate_enqueue || gbl_done)
         { // Command::Rotate: here we just collect some stats.
           enqueuer_stats_rotate(&est);
-          stats_flush(); /* need to flush here, as this should
-                            be it's own process so would have it's
-                            own mondemand structure */
+          enqueuer_stats_flush();
+          gbl_rotate_enqueue = 0;
         }
 
-      if ( (que_write_ret = que.vtbl->write(&que,
-                                            buf,
-                                            xpt_read_ret + HEADER_LENGTH)) < 0 )
+      if (xpt_read_ret != XPORT_INTR)
         {
-          LOG_ER("Queue write error attempting to write %d bytes.\n",
-                 xpt_read_ret + HEADER_LENGTH);
-          continue;
-        }
-      else
-        {
-          LOG_PROG("Queue write of %d bytes.\n",
-                   xpt_read_ret + HEADER_LENGTH);
+          if ( (que_write_ret = que.vtbl->write(&que,
+                                                buf,
+                                                xpt_read_ret + HEADER_LENGTH)) < 0 )
+            {
+              LOG_ER("Queue write error attempting to write %d bytes.\n",
+                     xpt_read_ret + HEADER_LENGTH);
+              continue;
+            }
+          else
+            {
+              LOG_PROG("Queue write of %d bytes.\n",
+                       xpt_read_ret + HEADER_LENGTH);
+            }
         }
     }
+  LOG_INF("xport shutting down\n");
   que.vtbl->dealloc(&que, buf);
 
   xpt.vtbl->destructor(&xpt);
