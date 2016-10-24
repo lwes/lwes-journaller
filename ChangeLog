@@ -1,3 +1,6 @@
+Version 1.0.1 (anthonym)
+* forgot to bump lwes/mondemand versions for travis
+
 Version 1.0.0 (anthonym)
 * rewrote xport_udp to use an lwes_net_connection
 * separated out thread and process models

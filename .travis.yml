@@ -11,6 +11,7 @@ script:
 - bash ./.travis-build.sh
 
 before_deploy:
+  - "rm -f lwes-journaller-*.tar.gz"
   - "make dist"
   - export RELEASE_FILE=$(ls lwes-journaller-*.tar.gz)
 
