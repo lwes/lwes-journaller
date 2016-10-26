@@ -21,7 +21,6 @@
 #include <time.h>
 #include <errno.h>
 #include "log.h"
-#include "lwes_mondemand.h"
 #include "opt.h"
 #include "sig.h"
 
@@ -106,8 +105,6 @@ void log_msg(log_level_t level, const char* fname, int lineno, const char* forma
   log = get_log();
   fprintf(log, "%s %s %s:%d : %s", timestr, log_get_level_string(level), fname, lineno, buf);
   fflush(log);
-
-  mondemand_log_msg(level, fname, lineno, buf);
 }
 
 static void log_append_masked_level(char* str, int len, int level)

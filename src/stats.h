@@ -79,6 +79,7 @@ void enqueuer_stats_erase_datagram (struct enqueuer_stats* this_stats, int bytes
 void enqueuer_stats_rotate (struct enqueuer_stats* this_stats);
 void enqueuer_stats_report (struct enqueuer_stats* this_stats);
 void enqueuer_stats_flush (void);
+void enqueuer_stats_dtor (struct enqueuer_stats* this_stats);
 
 int dequeuer_stats_ctor (struct dequeuer_stats* this_stats);
 void dequeuer_stats_record (struct dequeuer_stats* this_stats, int bytes, int pending);
@@ -86,5 +87,6 @@ void dequeuer_stats_record_loss (struct dequeuer_stats* this_stats);
 void dequeuer_stats_rotate (struct dequeuer_stats* this_stats);
 void dequeuer_stats_report (struct dequeuer_stats* this_stats);
 void dequeuer_stats_flush (void);
+void dequeuer_stats_dtor (struct dequeuer_stats* this_stats);
 
 #endif /* STATS_DOT_H */

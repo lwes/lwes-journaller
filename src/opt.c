@@ -184,22 +184,32 @@ void process_options(int argc, const char* argv[])
         }
     }
 
-  arg_journalls = (char**) poptGetArgs(optCon);
+  char ** possible_arg_journalls = (char**) poptGetArgs(optCon);
 
   /* Count the journals specified on the command line. */
-  if ( arg_journalls )
+  if ( possible_arg_journalls )
     {
-      for ( arg_njournalls=0; arg_journalls[arg_njournalls]; ++arg_njournalls )
+      for ( arg_njournalls=0;
+            possible_arg_journalls[arg_njournalls];
+            ++arg_njournalls )
         ;
     }
 
   /* Use default journal spec if none provided on the command line. */
   if ( 0 == arg_njournalls )
     {
-      static const char* default_arg_journalls[] = { "/tmp/all_events.log.gz",
-                                                     NULL };
-      arg_journalls = (char**) default_arg_journalls;
+      arg_journalls = (char**) malloc(sizeof(char*));
+      arg_journalls[0] = strdup ("/tmp/all_events.log.gz");
       arg_njournalls = 1;
+    }
+  else
+    {
+      arg_journalls = (char **)malloc(sizeof(char*)*arg_njournalls);
+      int i = 0;
+      for (i = 0; possible_arg_journalls[i]; ++i)
+        {
+          arg_journalls[i] = strdup (possible_arg_journalls[i]);
+        }
     }
 
   /* convert the journal file username to a uid */
@@ -376,8 +386,20 @@ void process_options(int argc, const char* argv[])
       ++bad_options;
     }
 
+  poptFreeContext(optCon);
   if ( bad_options )
     {
       exit(EXIT_FAILURE);
     }
 }
+
+void options_destructor (void)
+{
+  int i;
+  for (i = 0; i < arg_njournalls; i++)
+    {
+      free(arg_journalls[i]);
+    }
+  free(arg_journalls);
+}
+

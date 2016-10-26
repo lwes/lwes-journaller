@@ -207,6 +207,7 @@ int queue_to_journal(void)
   que.vtbl->destructor(&que);
 
   dequeuer_stats_report(&dst);
+  dequeuer_stats_dtor(&dst);
 
   return 0;
 }

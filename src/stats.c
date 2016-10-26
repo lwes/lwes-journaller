@@ -52,8 +52,15 @@ int enqueuer_stats_ctor (struct enqueuer_stats* st)
 
   st->start_time = time (NULL);
   st->last_rotate = st->start_time;
+  mondemand_enqueuer_stats_init();
 
   return 0;
+}
+void enqueuer_stats_dtor (struct enqueuer_stats* st)
+{
+  (void)st;
+  printf ("about to clear mondemand enqueuer\n");
+  mondemand_enqueuer_stats_free();
 }
 
 int dequeuer_stats_ctor (struct dequeuer_stats* st)
@@ -64,8 +71,16 @@ int dequeuer_stats_ctor (struct dequeuer_stats* st)
   st->hiq_start = st->start_time;
   st->last_rotate = st->start_time;
   st->rotation_type = LJ_RT_NONE;
+  mondemand_dequeuer_stats_init();
 
   return 0;
+}
+
+void dequeuer_stats_dtor (struct dequeuer_stats* st)
+{
+  (void)st;
+  printf ("about to clear mondemand dequeuer\n");
+  mondemand_dequeuer_stats_free();
 }
 
 void enqueuer_stats_record_socket_error (struct enqueuer_stats* st)

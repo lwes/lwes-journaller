@@ -197,6 +197,7 @@ int main(int argc, const char* argv[])
   LOG_INF(_buf);
 
   delete_pid_file();
+  options_destructor();
 
   return 0;
 }

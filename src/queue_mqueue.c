@@ -208,7 +208,9 @@ static int xwrite (struct queue* this_queue, const void* buf, size_t count)
 
 static void* alloc (struct queue* this_queue, size_t* newcount)
 {
-  return malloc (*newcount = ((struct priv*)this_queue->priv)->max_sz);
+  void *data = malloc (*newcount = ((struct priv*)this_queue->priv)->max_sz);
+  memset(data, 0, *newcount);
+  return data;
 }
 
 static void dealloc (struct queue* this_queue, void* buf)

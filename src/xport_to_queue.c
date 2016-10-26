@@ -40,6 +40,8 @@ int xport_to_queue(void)
   unsigned char* buf = 0;
   size_t bufsiz;
 
+  enqueuer_stats_ctor(&est);
+
   if ( arg_rt )
     {
       skd();
@@ -127,6 +129,7 @@ int xport_to_queue(void)
   que.vtbl->destructor(&que);
 
   enqueuer_stats_report(&est);
+  enqueuer_stats_dtor(&est);
 
   return 0;
 }

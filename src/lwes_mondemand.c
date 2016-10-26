@@ -11,9 +11,11 @@
  *======================================================================*/
 
 #include "lwes_mondemand.h"
+#include "log.h"
 #include "opt.h"
 #include "stats.h"
 #include <string.h>
+#include <stdio.h>
 
 #ifdef HAVE_MONDEMAND
 
@@ -34,7 +36,7 @@ struct mondemand_client *dequeue_client;
 /* FIXME: I don't like this, but trying to get serial/thread and process to
  * all work properly, so lots of code duplication for the moment
  */
-static void enqueue_init()
+void mondemand_enqueuer_stats_init ()
 {
   if (enqueue_client==NULL
       && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
@@ -54,7 +56,7 @@ static void enqueue_init()
     }
 }
 
-static void dequeue_init()
+void mondemand_dequeuer_stats_init ()
 {
   if (dequeue_client==NULL
       && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
@@ -77,7 +79,6 @@ static void dequeue_init()
 void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
 {
   (void)now; // appease -Wall -Werror
-  enqueue_init();
   if (enqueue_client==NULL) return;
   mondemand_set(enqueue_client, socket_errors_since_last_rotate);
   mondemand_inc(enqueue_client, bytes_received_total);
@@ -89,7 +90,6 @@ void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
 void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
 {
   (void)now; // appease -Wall -Werror
-  dequeue_init();
   if (dequeue_client==NULL) return;
   mondemand_set(dequeue_client, loss_since_last_rotate);
   mondemand_inc(dequeue_client, bytes_written_total);
@@ -109,7 +109,6 @@ void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
 }
 
 void mondemand_enqueuer_flush (void) {
-  enqueue_init();
   if (enqueue_client != NULL)
     {
       mondemand_flush_stats(enqueue_client);
@@ -117,41 +116,31 @@ void mondemand_enqueuer_flush (void) {
 }
 
 void mondemand_dequeuer_flush (void) {
-  dequeue_init();
   if (dequeue_client != NULL)
     {
       mondemand_flush_stats(dequeue_client);
     }
 }
 
-static int get_mondemand_level (log_level_t level)
+void mondemand_enqueuer_stats_free (void)
 {
-  switch (level)
-    {
-    case LOG_ERROR:
-      return M_LOG_ERR;
-    case LOG_WARNING:
-      return M_LOG_WARNING;
-    case LOG_INFO:
-      return M_LOG_INFO;
-    default:
-      return M_LOG_DEBUG;
-    }
+  mondemand_client_destroy (enqueue_client);
 }
 
-void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf)
+void mondemand_dequeuer_stats_free (void)
 {
-  const int mondemand_level = get_mondemand_level(level);
-
-  struct mondemand_client *client =
-    (enqueue_client != NULL ? enqueue_client : dequeue_client);
-  if (mondemand_level_is_enabled(client, mondemand_level))
-  {
-    mondemand_log_real(client, fname, lineno, level, MONDEMAND_NULL_TRACE_ID, "%s", buf);
-  }
+  mondemand_client_destroy (dequeue_client);
 }
 
 #else /* HAVE_MONDEMAND */
+
+void mondemand_enqueuer_stats_init (void)
+{
+}
+
+void mondemand_dequeuer_stats_init (void)
+{
+}
 
 void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
 {
@@ -171,12 +160,11 @@ void mondemand_enqueuer_flush (void) {
 void mondemand_dequeuer_flush (void) {
 }
 
-void mondemand_log_msg (log_level_t level, const char *fname, int lineno, const char *buf)
+void mondemand_enqueuer_stats_free (void)
 {
-  (void)level;
-  (void)fname;
-  (void)lineno;
-  (void)buf;
 }
 
+void mondemand_dequeuer_stats_free (void)
+{
+}
 #endif /* HAVE_MONDEMAND */

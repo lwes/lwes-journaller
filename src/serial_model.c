@@ -251,6 +251,11 @@ static void serial_write(void)
 static void serial_dtor(void)
 {
   serial_close_journal();
+  lwes_emitter_destroy(emitter);
+  xpt.vtbl->destructor(&xpt);
+  jrn.vtbl->destructor(&jrn);
+  enqueuer_stats_dtor(&est);
+  dequeuer_stats_dtor(&dst);
 }
 
 void serial_model(void)

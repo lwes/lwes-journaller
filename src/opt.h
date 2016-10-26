@@ -70,5 +70,6 @@ extern const char*    arg_mondemand_program_id;
 #define WAKEUP_MS 100
 
 void process_options(int argc, const char* argv[]);
+void options_destructor (void);
 
 #endif /* OPT_DOT_H */
