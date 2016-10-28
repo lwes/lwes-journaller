@@ -156,7 +156,7 @@ void process_model(const char* argv[])
                            "trigger log rotate.\n", queue_to_journal_pid);
                   kill(queue_to_journal_pid, SIGHUP);
                 }
-              gbl_rotate_dequeue = 0;
+              __sync_bool_compare_and_swap(&gbl_rotate_dequeue,1,0);
             }
           if ( gbl_rotate_enqueue )
             {
@@ -166,7 +166,7 @@ void process_model(const char* argv[])
                            "trigger log rotate.\n", xport_to_queue_pid);
                   kill(xport_to_queue_pid, SIGHUP);
                 }
-              gbl_rotate_dequeue = 0;
+              __sync_bool_compare_and_swap(&gbl_rotate_enqueue,1,0);
             }
           continue;
         }

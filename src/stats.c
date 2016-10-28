@@ -59,7 +59,6 @@ int enqueuer_stats_ctor (struct enqueuer_stats* st)
 void enqueuer_stats_dtor (struct enqueuer_stats* st)
 {
   (void)st;
-  printf ("about to clear mondemand enqueuer\n");
   mondemand_enqueuer_stats_free();
 }
 
@@ -79,7 +78,6 @@ int dequeuer_stats_ctor (struct dequeuer_stats* st)
 void dequeuer_stats_dtor (struct dequeuer_stats* st)
 {
   (void)st;
-  printf ("about to clear mondemand dequeuer\n");
   mondemand_dequeuer_stats_free();
 }
 

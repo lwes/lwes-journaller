@@ -142,7 +142,9 @@ static int xread (struct queue* this_queue, void* buf,
   LOG_PROG("about to call mq_receive().  gbl_done=%d\n", gbl_done);
 
   /* use blocking reads unless we're shutting down. */
-  struct timespec time_buf = { time(NULL), arg_wakup_interval_ms * 1000000 };
+  int wakeup_secs = arg_wakeup_interval_ms / 1000;
+  int wakeup_ms = arg_wakeup_interval_ms % 1000;
+  struct timespec time_buf = { time(NULL) + wakeup_secs, wakeup_ms * 1000000 };
   mq_rec_rtrn = mq_timedreceive (ppriv->mq, buf, count, &pri, &time_buf);
 
   if (mq_rec_rtrn < 0 )
@@ -157,7 +159,7 @@ static int xread (struct queue* this_queue, void* buf,
              down, so no need to print errors. */
         case ETIMEDOUT:
         case EINTR:
-          return mq_rec_rtrn;
+          return QUEUE_INTR;
         }
     }
 

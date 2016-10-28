@@ -112,20 +112,26 @@ static void serial_open_journal(void)
     }
 }
 
-static void serial_close_journal(void)
+static void serial_close_journal(int is_rotate_event)
 {
-  if (gbl_done || gbl_rotate_enqueue)
+  if (gbl_done || gbl_rotate_enqueue || is_rotate_event)
     {
       enqueuer_stats_rotate(&est);
-      enqueuer_stats_flush();
-      gbl_rotate_enqueue = 0;
+      if (!gbl_done)
+        {
+          enqueuer_stats_flush();
+        }
+      __sync_bool_compare_and_swap(&gbl_rotate_enqueue,1,0);
     }
 
-  if (gbl_done || gbl_rotate_dequeue)
+  if (gbl_done || gbl_rotate_dequeue || is_rotate_event)
     {
       dequeuer_stats_rotate(&dst);
-      dequeuer_stats_flush();
-      gbl_rotate_dequeue = 0;
+      if (!gbl_done)
+        {
+          dequeuer_stats_flush();
+        }
+      __sync_bool_compare_and_swap(&gbl_rotate_dequeue,1,0);
     }
 
   if (jrn.vtbl->close(&jrn) < 0) {
@@ -134,17 +140,22 @@ static void serial_close_journal(void)
   }
 }
 
-static void serial_rotate(void)
+static void serial_rotate(int is_rotate_event)
 {
-  serial_close_journal();
+  serial_close_journal(is_rotate_event);
   serial_open_journal();
 }
 
 static int serial_read(void)
 {
   unsigned long addr;
-  short         port;
-  int           xpt_read_ret =
+  short port;
+
+  /* 0 out part of the the event name so if we get a rotate event the program
+   * will not continually rotate */
+  memset(buf, 0, HEADER_LENGTH+20);
+
+  int xpt_read_ret =
       xpt.vtbl->read(&xpt, buf+HEADER_LENGTH, BUFLEN-HEADER_LENGTH, &addr, &port);
 
   if (xpt_read_ret >= 0)
@@ -250,7 +261,7 @@ static void serial_write(void)
 
 static void serial_dtor(void)
 {
-  serial_close_journal();
+  serial_close_journal(0);
   lwes_emitter_destroy(emitter);
   xpt.vtbl->destructor(&xpt);
   jrn.vtbl->destructor(&jrn);
@@ -263,7 +274,7 @@ void serial_model(void)
   serial_ctor();
 
   do {
-    int is_rotate = 0;
+    int is_rotate_event = 0;
     int read_ret = serial_read();
     /* -1 is an error we don't deal with, so just skip out of the loop */
     if (read_ret == -1)             continue;
@@ -278,11 +289,11 @@ void serial_model(void)
     if (header_is_rotate(buf)) {
       memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
       dst.rotation_type = LJ_RT_EVENT;
-      is_rotate = 1;
+      is_rotate_event = 1;
     }
-    if (is_rotate || gbl_rotate_dequeue || gbl_rotate_enqueue) {
-      serial_rotate();
-      is_rotate = 0;
+    if (is_rotate_event || gbl_rotate_dequeue || gbl_rotate_enqueue) {
+      serial_rotate(is_rotate_event);
+      is_rotate_event = 0;
     }
     /* maybe send depth test */
     if (tm >= depth_tm + depth_dtm) serial_send_buffer_depth_test();

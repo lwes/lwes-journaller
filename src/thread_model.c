@@ -56,14 +56,14 @@ signal_thread(void *arg)
         PERROR ("sigwait");
       }
       if (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM) {
-        gbl_done = 1;
+        __sync_bool_compare_and_swap(&gbl_done,0,1);
       }
       if (sig == SIGHUP || sig == SIGALRM) {
-        gbl_rotate_enqueue = 1;
-        gbl_rotate_dequeue = 1;
+        __sync_bool_compare_and_swap(&gbl_rotate_enqueue,0,1);
+        __sync_bool_compare_and_swap(&gbl_rotate_dequeue,0,1);
       }
       if (sig == SIGUSR1) {
-        gbl_rotate_log = 1;
+        __sync_bool_compare_and_swap(&gbl_rotate_log,0,1);
       }
    }
 

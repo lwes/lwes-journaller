@@ -94,7 +94,7 @@ char*  arg_disk_journals[10];
  * round intervals starting at beginning of day)
  */
 int    arg_journal_rotate_interval = 0;
-int    arg_wakup_interval_ms = WAKEUP_MS;
+int    arg_wakeup_interval_ms = WAKEUP_MS;
 
 int    arg_nodaemonize         = 0;
 
@@ -140,7 +140,7 @@ void process_options(int argc, const char* argv[])
     { "site",         'n', POPT_ARG_INT,    &arg_site,           0, "Site id", "int" },
     { "sockbuffer",    0,  POPT_ARG_INT,    &arg_sockbuffer,     0, "Receive socket buffer size", "bytes" },
     { "ttl",           0,  POPT_ARG_INT,    &arg_ttl,            0, "Emitting TTL value", "hops" },
-    { "wakeup", 'w', POPT_ARG_INT, &arg_wakup_interval_ms, 0, "How often to break checking for signals", "milliseconds" },
+    { "wakeup", 'w', POPT_ARG_INT, &arg_wakeup_interval_ms, 0, "How often to break checking for signals", "milliseconds" },
     { "user",          0,  POPT_ARG_STRING, &arg_journal_user,   0, "Owner of journal files", "user" },
     { "version",      'v', POPT_ARG_NONE,   &arg_version,        0, "Display version, then exit", 0 },
     { "xport-type",   'x', POPT_ARG_STRING, &arg_xport,          0, "Transport, dflt=udp", "{" ARG_UDP ", ...}" },

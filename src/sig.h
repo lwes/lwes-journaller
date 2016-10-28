@@ -14,10 +14,12 @@
 #ifndef SIG_DOT_H
 #define SIG_DOT_H
 
-extern volatile int gbl_done;
-extern volatile int gbl_rotate_enqueue;
-extern volatile int gbl_rotate_dequeue;
-extern volatile int gbl_rotate_log;
+#include <signal.h>
+
+extern volatile sig_atomic_t gbl_done;
+extern volatile sig_atomic_t gbl_rotate_enqueue;
+extern volatile sig_atomic_t gbl_rotate_dequeue;
+extern volatile sig_atomic_t gbl_rotate_log;
 
 extern void install_signal_handlers (void);
 extern void install_rotate_signal_handlers (void);

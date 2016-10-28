@@ -19,31 +19,31 @@
 #include "log.h"
 #include "perror.h"
 
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-volatile int gbl_done = 0;
-volatile int gbl_rotate_enqueue = 0;
-volatile int gbl_rotate_dequeue = 0;
-volatile int gbl_rotate_log = 0;
+volatile sig_atomic_t gbl_done = 0;
+volatile sig_atomic_t gbl_rotate_enqueue = 0;
+volatile sig_atomic_t gbl_rotate_dequeue = 0;
+volatile sig_atomic_t gbl_rotate_log = 0;
 
 static void terminate_signal_handler(int signo)
 {
-  gbl_done = signo;
+  (void)signo; /* appease -Wall -Werror */
+  __sync_bool_compare_and_swap(&gbl_done,0,1);
 }
 
 static void rotate_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
-  gbl_rotate_enqueue = 1;
-  gbl_rotate_dequeue = 1;
+  __sync_bool_compare_and_swap(&gbl_rotate_enqueue,0,1);
+  __sync_bool_compare_and_swap(&gbl_rotate_dequeue,0,1);
 }
 
 static void rotate_log_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
-  gbl_rotate_log = 1;
+  __sync_bool_compare_and_swap(&gbl_rotate_log,0,1);
 }
 
 static void install(int signo, void (*handler)(int signo))

@@ -37,9 +37,6 @@ static int rotate(struct journal* jrn, int jcurr)
 {
   unsigned long long t0 = time_in_milliseconds(), t1;
 
-  dequeuer_stats_rotate(&dst);
-  dequeuer_stats_flush();
-
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
       LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[jcurr]);
@@ -68,7 +65,7 @@ int queue_to_journal(void)
   int jcurr = 0;
   void* buf = NULL ;
   size_t bufsiz;
-  int pending = 0, write_pending = 0;
+  int pending = 0;
   unsigned long long t0, receive_time, max_receive_time=0,
       total_receive_time=0, write_time, max_write_time=0, total_write_time=0;
 
@@ -113,6 +110,7 @@ int queue_to_journal(void)
       LOG_ER("unable to allocate %d bytes for message buffer.\n", bufsiz);
       exit(EXIT_FAILURE);
     }
+  memset(buf, 0, bufsiz);
 
   /* Read a packet from the queue, write it to the journal. */
   while ( ! gbl_done )
@@ -120,9 +118,50 @@ int queue_to_journal(void)
       int que_read_ret;
       int jrn_write_ret;
 
-      /* If we have a pending rotate to perform, do it now. */
-      if ( gbl_rotate_dequeue )
+      /* 0 out part of the the event name so if we get a rotate event
+       * the program will not continually rotate */
+      memset(buf, 0, HEADER_LENGTH+20);
+
+      t0 = time_in_milliseconds();
+      que_read_ret = que.vtbl->read(&que, buf, bufsiz, &pending);
+      if (que_read_ret >= 0)
         {
+          receive_time = time_in_milliseconds() - t0;
+          max_receive_time =
+            max_receive_time < receive_time ? receive_time : max_receive_time;
+          total_receive_time += receive_time;
+          dequeuer_stats_record(&dst, que_read_ret-HEADER_LENGTH, pending);
+        }
+      else if (que_read_ret == QUEUE_INTR )
+        {
+          /* ignore expected interrupts */
+        }
+      else
+        {
+          LOG_INF("Received other interruption\n");
+          continue; /* no event, so do not process the rest */
+        }
+
+      // is this a command event?
+      if ( header_is_rotate(buf) || gbl_rotate_dequeue || gbl_done )
+        {
+          if (header_is_rotate (buf))
+            {
+              // is it a new enough Command::Rotate, or masked out?
+              memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH);
+              dst.rotation_type = LJ_RT_EVENT;
+            }
+          dequeuer_stats_rotate(&dst);
+
+          /* if we are shutting down the destructor will flush stats,
+           * so skip so we don't get duplicate events sent to mondemand
+           * if it is enabled
+           */
+          if (! gbl_done )
+            {
+              dequeuer_stats_flush();
+            }
+
           LOG_INF("Maximum receive time was %0.2f seconds;"
                   " total receive time was %0.2f seconds\n",
                   max_receive_time/1000000., total_receive_time/1000000.);
@@ -130,63 +169,36 @@ int queue_to_journal(void)
                   " total write time was %0.2f seconds\n",
                   max_write_time/1000000., total_write_time/1000000.);
           LOG_INF("About to rotate journal (%d pending).\n", pending);
-          write_pending = 1;
           jcurr = rotate(jrn,jcurr);
           max_receive_time = 0;
           max_write_time = 0;
           total_receive_time = 0;
           total_write_time = 0;
 
-          gbl_rotate_dequeue = 0;
+          if (gbl_rotate_dequeue)
+            {
+              __sync_bool_compare_and_swap(&gbl_rotate_dequeue,1,0);
+            }
         }
 
-      t0 = time_in_milliseconds();
-      if ( (que_read_ret = que.vtbl->read(&que, buf, bufsiz, &pending)) < 0 )
+      if (que_read_ret != QUEUE_INTR)
         {
-          /* queue is empty */
-          if (gbl_done) break; /* if we're shutting down, exit this loop. */
-          continue;            /* no event, so do not process the rest */
+          t0 = time_in_milliseconds();
+          /* Write the packet out to the journal. */
+          if ( (jrn_write_ret = jrn[jcurr].vtbl->write(&jrn[jcurr],
+                                                       buf, que_read_ret))
+               != que_read_ret )
+            {
+              LOG_ER("Journal write error -- attempted to write %d bytes, "
+                     "write returned %d.\n", que_read_ret, jrn_write_ret);
+              dequeuer_stats_record_loss(&dst);
+            }
+          write_time = time_in_milliseconds() - t0;
+          max_write_time =
+            max_write_time < write_time ? write_time : max_write_time;
+          total_write_time += write_time;
         }
-      receive_time = time_in_milliseconds() - t0;
-      if ( max_receive_time < receive_time ) max_receive_time = receive_time;
-      total_receive_time += receive_time;
-
-      LOG_PROG("Read %d bytes from queue (%d pending).\n",
-               que_read_ret, pending);
-      if (write_pending)
-        {
-          LOG_INF("Done with rotating journal (%d pending).\n", pending);
-          write_pending = 0;
-        }
-
-      // is this a command event?
-      if ( header_is_rotate(buf) )
-        { // Command::Rotate
-          // is it a new enough Command::Rotate, or masked out?
-          memcpy(&dst.latest_rotate_header, buf, HEADER_LENGTH) ;
-          dst.rotation_type = LJ_RT_EVENT;
-          gbl_rotate_dequeue = 1;
-          gbl_rotate_enqueue = 1;
-        }
-
-      t0 = time_in_milliseconds();
-      dequeuer_stats_record(&dst, que_read_ret-HEADER_LENGTH, pending);
-      /* Write the packet out to the journal. */
-      if ( (jrn_write_ret = jrn[jcurr].vtbl->write(&jrn[jcurr],
-                                                   buf, que_read_ret)) 
-           != que_read_ret )
-        {
-          LOG_ER("Journal write error -- attempted to write %d bytes, "
-                 "write returned %d.\n", que_read_ret, jrn_write_ret);
-          dequeuer_stats_record_loss(&dst);
-        }
-      write_time = time_in_milliseconds() - t0;
-      if ( max_write_time < write_time ) max_write_time = write_time;
-      total_write_time += write_time;
     } /* while ( ! gbl_done) */
-
-  dequeuer_stats_rotate(&dst);
-  dequeuer_stats_flush();
 
   if ( jrn[jcurr].vtbl->close(&jrn[jcurr]) < 0 )
     {
@@ -206,6 +218,7 @@ int queue_to_journal(void)
   que.vtbl->dealloc(&que, buf);
   que.vtbl->destructor(&que);
 
+  dequeuer_stats_rotate(&dst);
   dequeuer_stats_report(&dst);
   dequeuer_stats_dtor(&dst);
 

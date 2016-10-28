@@ -42,7 +42,7 @@ extern int            arg_ttl;
 extern int            arg_journal_uid;
 extern int            arg_version;
 extern const char*    arg_xport;
-extern int            arg_wakup_interval_ms;
+extern int            arg_wakeup_interval_ms;
 
 #ifdef HAVE_MONDEMAND
 extern const char*    arg_mondemand_host;
@@ -67,7 +67,7 @@ extern const char*    arg_mondemand_program_id;
 /* arg_xport: */
 #define ARG_UDP     "udp"
 
-#define WAKEUP_MS 100
+#define WAKEUP_MS   100
 
 void process_options(int argc, const char* argv[]);
 void options_destructor (void);

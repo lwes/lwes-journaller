@@ -38,7 +38,7 @@ static FILE* get_log()
   {
     fclose(log);
     log = NULL;
-    gbl_rotate_log = 0;
+    __sync_bool_compare_and_swap(&gbl_rotate_log,1,0);
   }
 
   /* if we have no log open now, open one. */

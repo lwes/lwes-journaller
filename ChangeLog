@@ -1,3 +1,6 @@
+Version 1.0.2 (anthonym)
+* switch to atomic operation functions for global switches to appease helgrind
+
 Version 1.0.1 (anthonym)
 * forgot to bump lwes/mondemand versions for travis
 

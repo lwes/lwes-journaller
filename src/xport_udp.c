@@ -89,7 +89,7 @@ static int xread (struct xport* this_xport, void* buf, size_t count,
 
   if ( (recvfrom_ret =
           lwes_net_recv_bytes_by (&ppriv->conn, buf, count,
-                                  arg_wakup_interval_ms)) < 0 )
+                                  arg_wakeup_interval_ms)) < 0 )
     {
       switch (recvfrom_ret)
         {

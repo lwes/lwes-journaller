@@ -191,7 +191,7 @@ static int xread (struct queue* this_queue, void* buf,
            * print errors. */
         case EIDRM:
         case EINTR:
-          return msgrcv_ret;
+          return QUEUE_INTR;
         }
     }
 

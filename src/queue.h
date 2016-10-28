@@ -16,6 +16,8 @@
 
 #include <stddef.h>
 
+#define QUEUE_INTR -2
+
 /* Queue methods:
  *
  * open() -- opens a queue, return 0 on success, -1 on error

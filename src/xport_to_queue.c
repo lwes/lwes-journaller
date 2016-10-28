@@ -67,7 +67,7 @@ int xport_to_queue(void)
       LOG_ER("unable to allocate %d bytes for message buffer.\n", bufsiz);
       exit(EXIT_FAILURE);
     }
-  memset(buf, 0, HEADER_LENGTH); /* Clear the header portion of the message. */
+  memset(buf, 0, bufsiz);
 
   /* Read a packet from the transport, write it to the queue. */
   while ( ! gbl_done )
@@ -77,6 +77,11 @@ int xport_to_queue(void)
       unsigned long long tm;
       unsigned long addr;
       short port;
+
+      /* 0 out part of the the event name so if we get a rotate event
+       * the program will not continually rotate */
+      memset(buf, 0, HEADER_LENGTH+20);
+
       int xpt_read_ret = xpt.vtbl->read(&xpt,
                                         buf + HEADER_LENGTH,
                                         bufsiz - HEADER_LENGTH,
@@ -89,7 +94,7 @@ int xport_to_queue(void)
         }
       else if (xpt_read_ret == XPORT_INTR)
         {
-          ;
+          /* ignore expected interrupts */;
         }
       else
         {
@@ -98,11 +103,22 @@ int xport_to_queue(void)
           continue;
         }
 
+      /* we are rotating or shutting down */
       if ( header_is_rotate (buf) || gbl_rotate_enqueue || gbl_done)
-        { // Command::Rotate: here we just collect some stats.
+        {
           enqueuer_stats_rotate(&est);
-          enqueuer_stats_flush();
-          gbl_rotate_enqueue = 0;
+          /* if we are shutting down the destructor will flush stats,
+           * so skip so we don't get duplicate events sent to mondemand
+           * if it is enabled
+           */
+          if (! gbl_done )
+            {
+              enqueuer_stats_flush();
+            }
+          if (gbl_rotate_enqueue)
+            {
+              __sync_bool_compare_and_swap(&gbl_rotate_enqueue,1,0);
+            }
         }
 
       if (xpt_read_ret != XPORT_INTR)
@@ -122,12 +138,14 @@ int xport_to_queue(void)
             }
         }
     }
+
   LOG_INF("xport shutting down\n");
   que.vtbl->dealloc(&que, buf);
 
   xpt.vtbl->destructor(&xpt);
   que.vtbl->destructor(&que);
 
+  enqueuer_stats_rotate(&est);
   enqueuer_stats_report(&est);
   enqueuer_stats_dtor(&est);
 
