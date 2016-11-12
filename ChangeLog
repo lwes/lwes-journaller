@@ -1,3 +1,7 @@
+Version 1.0.3 (anthonym)
+* refactor logging to work better with threads and hopefully no longer cause
+core dumps randomly when rotating logs in threaded mode
+
 Version 1.0.2 (anthonym)
 * switch to atomic operation functions for global switches to appease helgrind
 
