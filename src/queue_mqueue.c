@@ -28,7 +28,6 @@
 #include <sys/resource.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -67,7 +66,6 @@ static int xopen (struct queue* this_queue, int flags)
       attr.mq_maxmsg = ppriv->max_cnt;
       attr.mq_msgsize = ppriv->max_sz;
 
-      errno = 0 ;
       /* see http://www.die.net/doc/linux/man/man7/mq_overview.7.html */
       if ( (mqd_t)-1 == (ppriv->mq = mq_open (ppriv->path,
                                               flags | O_CREAT, 0666, &attr)) )
@@ -76,30 +74,20 @@ static int xopen (struct queue* this_queue, int flags)
            * failing see http://www.die.net/doc/linux/man/man2/getrlimit.2.html
            */
           struct rlimit rlim;
-          PERROR("mq_open");
-          errno = 0;
           attr.mq_maxmsg += 1;
-          rlim.rlim_cur = RLIM_INFINITY; /* attr.mq_maxmsg * sizeof(struct msg_msg *) + attr.mq_maxmsg * attr.mq_msgsize ; */
-          rlim.rlim_max = RLIM_INFINITY ; /*rlim.rlim_cur ; */
-          if ( setrlimit (RLIMIT_MSGQUEUE, &rlim) )
-            {
-              PERROR("setrlimit");
-            }
+          rlim.rlim_cur = RLIM_INFINITY;
+          rlim.rlim_max = RLIM_INFINITY ;
+          setrlimit (RLIMIT_MSGQUEUE, &rlim);
           attr.mq_maxmsg -= 1 ;
-
           if ( (mqd_t)-1 == (ppriv->mq = mq_open (ppriv->path,
                                                   flags | O_CREAT,
                                                   0666, &attr)) )
             {
-              LOG_ER("mq_open(path=\"%s\", flags=0x%04x, 0666, "
-                     "{attr.mq_maxmsg=%i, attr.mq_msgsize=%i})\n",
-                     ppriv->path, flags | O_CREAT, attr.mq_maxmsg,
-                     attr.mq_msgsize);
-              return -1;
+              return QUEUE_ERROR;
             }
         }
     }
-  return 0;
+  return QUEUE_OK;
 }
 
 static int xclose (struct queue* this_queue)
@@ -110,14 +98,13 @@ static int xclose (struct queue* this_queue)
     {
       if ( (mq_close (ppriv->mq)) < 0 )
         {
-          PERROR("mq_close");
-          return -1;
+          return QUEUE_ERROR;
         }
     }
 
   ppriv->mq = (mqd_t)-1;
 
-  return 0;
+  return QUEUE_OK;
 }
 
 static int xread (struct queue* this_queue, void* buf,
@@ -130,16 +117,14 @@ static int xread (struct queue* this_queue, void* buf,
 
   if ( 0 == buf )
     {
-      LOG_ER("queue read with NULL buf pointer\n");
-      return -1;
+      /* empty buffer */
+      return QUEUE_MEM_ERROR;
     }
   if ( (mqd_t)-1 == ppriv->mq )
     {
-      LOG_ER("queue read with queue closed.\n");
-      return -1;
+      /* queue read with queue closed. */
+      return QUEUE_CLOSED_ERROR;
     }
-
-  LOG_PROG("about to call mq_receive().  gbl_done=%d\n", gbl_done);
 
   /* use blocking reads unless we're shutting down. */
   int wakeup_secs = arg_wakeup_interval_ms / 1000;
@@ -149,37 +134,35 @@ static int xread (struct queue* this_queue, void* buf,
 
   if (mq_rec_rtrn < 0 )
     {
-      LOG_PROG("errno: %d %s\n", errno, strerror(errno));
       switch ( errno )
         {
-        default:
-          PERROR("mq_receive"); 
-
           /* If we've been interrupted it's likely that we're shutting
              down, so no need to print errors. */
-        case ETIMEDOUT:
-        case EINTR:
-          return QUEUE_INTR;
+          case ETIMEDOUT:
+          case EINTR:
+            return QUEUE_INTR;
+
+          default:
+            break;
         }
     }
 
-  if ( MQ_PRIO_MAX - 1 != pri )
-    {
-      LOG_ER("queue read returned message with unrecognized "
-             "priority (pri=%d).\n", pri);
-    }
-
-  LOG_PROG("mq_receive() returned %d.\n", mq_rec_rtrn);
-
   if ( mq_getattr (ppriv->mq, &attr) < 0 )
     {
-      PERROR("mq_getattr");
-      return -1;
+      /* failed to get attributes */
+      return QUEUE_ERROR;
     }
 
   *pending = attr.mq_curmsgs;
 
-  return mq_rec_rtrn;
+  if (mq_rec_rtrn < 0)
+    {
+      return QUEUE_READ_ERROR;
+    }
+  else
+    {
+      return mq_rec_rtrn;
+    }
 }
 
 static int xwrite (struct queue* this_queue, const void* buf, size_t count)
@@ -188,24 +171,22 @@ static int xwrite (struct queue* this_queue, const void* buf, size_t count)
 
   if ( 0 == buf )
     {
-      LOG_ER("queue write with NULL buf pointer\n");
-      return -1;
+      /* empty buffer */
+      return QUEUE_MEM_ERROR;
     }
   if ( (mqd_t)-1 == ppriv->mq )
     {
-      LOG_ER("queue write with queue closed.\n");
-      return -1;
+      /* queue write with queue closed. */
+      return QUEUE_CLOSED_ERROR;
     }
-
-  LOG_PROG("about to call mq_send().\n");
 
   if ( 0 != mq_send (ppriv->mq, buf, count, MQ_PRIO_MAX-1) )
     {
-      PERROR("mq_send");
-      return -1;
+      /* send error */
+      return QUEUE_WRITE_ERROR;
     }
 
-  return 0;
+  return QUEUE_OK;
 }
 
 static void* alloc (struct queue* this_queue, size_t* newcount)
@@ -224,7 +205,8 @@ static void dealloc (struct queue* this_queue, void* buf)
 int queue_mqueue_ctor (struct queue* this_queue,
                        const char*   path,
                        size_t        max_sz,
-                       size_t        max_cnt)
+                       size_t        max_cnt,
+                       FILE *        log)
 {
   static struct queue_vtbl vtbl = {
       destructor,
@@ -241,18 +223,18 @@ int queue_mqueue_ctor (struct queue* this_queue,
   ppriv = (struct priv*)malloc(sizeof(struct priv));
   if ( 0 == ppriv )
     {
-      LOG_ER("malloc failed attempting to allocate %d bytes\n",
+      LOG_ER(log,
+             "Failed to allocate %d bytes for queue data\n",
              sizeof(*ppriv));
-      return -1;
+      return QUEUE_MEM_ERROR;
     }
   memset(ppriv, 0, sizeof(*ppriv));
 
   if ( 0 == (ppriv->path = strdup(path)) )
     {
-      LOG_ER("strdup failed attempting to dup \"%s\"\n",
-             path);
+      LOG_ER(log, "Failed attempting to dup \"%s\"\n", path);
       free(ppriv);
-      return -1;
+      return QUEUE_MEM_ERROR;
     }
 
   ppriv->mq = (mqd_t)-1;
@@ -262,7 +244,7 @@ int queue_mqueue_ctor (struct queue* this_queue,
   this_queue->vtbl = &vtbl;
   this_queue->priv = ppriv;
 
-  return 0;
+  return QUEUE_OK;
 }
 
 #else  /* if defined(HAVE_MQUEUE_H) */
@@ -270,15 +252,17 @@ int queue_mqueue_ctor (struct queue* this_queue,
 int queue_mqueue_ctor (struct queue* this_queue,
                        const char*   path,
                        size_t        max_sz,
-                       size_t        max_cnt)
+                       size_t        max_cnt,
+                       FILE *        log)
 {
   this_queue->vtbl = 0;
   this_queue->priv = 0;
   (void)path;     /* appease -Wall -Werror */
   (void)max_sz;   /* appease -Wall -Werror */
   (void)max_cnt;  /* appease -Wall -Werror */
+  (void)log;      /* appease -Wall -Werror */
 
-  return -1;
+  return QUEUE_ERROR;
 }
 
 #endif /* HAVE_MQUEUE_H */

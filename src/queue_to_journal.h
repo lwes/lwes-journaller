@@ -14,6 +14,8 @@
 #ifndef QUEUE_TO_JOURNAL_DOT_H
 #define QUEUE_TO_JOURNAL_DOT_H
 
-int queue_to_journal (void);
+#include <stdio.h>
+
+int queue_to_journal (FILE *log);
 
 #endif /* QUEUE_TO_JOURNAL_DOT_H */

@@ -76,16 +76,12 @@ static void set_max_msg_size (size_t max_sz)
       return;
     }
 
-  if ( fscanf (fp, "%ld", &old_max) != 1 )
+  if ( fscanf (fp, "%ld", &old_max) == 1 )
     {
-      LOG_WARN("Unable to read old max_msg_size.\n");
-    }
-  else if ( max_sz > old_max )
-    {
-      rewind (fp);
-      if ( fprintf (fp, "%ld", max_sz) < 0 )
+      if ( max_sz > old_max )
         {
-          LOG_WARN("Unable to set max_msg_size to %ld.\n", max_sz);
+          rewind (fp);
+          fprintf (fp, "%ld", max_sz);
         }
     }
 
@@ -100,16 +96,14 @@ static int xopen (struct queue* this_queue, int flags)
 
   if ( -1 != ppriv->mq )
     {
-      LOG_ER("Queue already open.\n");
-      return -1;
+      return QUEUE_ERROR;
     }
 
   /* Get a handle to our message queue. */
   mq = msgget (ppriv->key, 0666 | IPC_CREAT);
   if ( -1 == mq )
     {
-      PERROR("msgget()");
-      return -1;
+      return QUEUE_ERROR;
     }
 
   /* Set the queue size in bytes. */
@@ -121,20 +115,18 @@ static int xopen (struct queue* this_queue, int flags)
     {
       if ( EPERM == errno )
         {
-          LOG_ER("Permission denied attempting to set the queue "
-                 "size using msgctl() -- you may need to be root.\n");
+          return QUEUE_PERMISSION_ERROR;
         }
       else
         {
-          PERROR("msgctl()");
-          return -1;
+          return QUEUE_ERROR;
         }
     }
 
   ppriv->mq = mq;
   ppriv->flags = flags;
 
-  return 0;
+  return QUEUE_OK;
 }
 
 static int xclose (struct queue* this_queue)
@@ -142,7 +134,7 @@ static int xclose (struct queue* this_queue)
   struct priv* ppriv = (struct priv*)this_queue->priv;
 
   ppriv->mq = -1;  /* No additional close operation required. */
-  return 0;
+  return QUEUE_OK;
 }
 
 static int xread (struct queue* this_queue, void* buf,
@@ -154,26 +146,26 @@ static int xread (struct queue* this_queue, void* buf,
   struct msqid_ds ds;
   int msgrcv_ret;
 
-  if ( O_WRONLY == ppriv->flags )
-    {
-      LOG_ER("Queue read attempted without appropriate permission.\n");
-      return -1;
-    }
   if ( 0 == buf )
     {
-      LOG_ER("Queue read with NULL buf pointer\n");
-      return -1;
+      /* Queue read with NULL buf pointer */
+      return QUEUE_MEM_ERROR;
     }
   if ( -1 == ppriv->mq )
     {
-      LOG_ER("Queue read with queue closed.\n");
-      return -1;
+      /* Queue read with queue closed */
+      return QUEUE_CLOSED_ERROR;
     }
+  if ( O_WRONLY == ppriv->flags )
+    {
+      /* Queue read attempted without appropriate permission. */
+      return QUEUE_PERMISSION_ERROR;
+    }
+
   if ( count > ppriv->max_sz )
     {
-      LOG_ER("Queue read with  count (%d) > max_sz (%d).\n",
-             count, ppriv->max_sz);
-      return -1;
+      /* Queue read of too much  */
+      return QUEUE_ERROR;
     }
 
   mp = (struct local_msgbuf*)(((char*)buf) - sizeof(mp->mtype));
@@ -183,32 +175,33 @@ static int xread (struct queue* this_queue, void* buf,
     {
       switch ( errno )
         {
-        default:
-          PERROR("msgrcv");
-
           /* If we've been interrupted or if the message queue was
            * removed, it's likely that we're shutting down, so no need to
            * print errors. */
-        case EIDRM:
-        case EINTR:
-          return QUEUE_INTR;
-        }
-    }
+          case EIDRM:
+          case EINTR:
+            return QUEUE_INTR;
 
-  if ( MSG_TYPE != mp->mtype )
-    {
-      LOG_WARN("Unrecognized message type %d.\n", mp->mtype);
+          default:
+            break;
+        }
     }
 
   if ( msgctl(ppriv->mq, IPC_STAT, &ds) )
     {
-      PERROR("msgctl(ppriv->mq, IPC_GET, &ds)");
-      return -1;
+      return QUEUE_ERROR;
     }
 
   *pending =  ds.msg_qnum;
 
-  return msgrcv_ret;
+  if ( msgrcv_ret < 0 )
+    {
+      return QUEUE_READ_ERROR;
+    }
+  else
+    {
+      return msgrcv_ret;
+    }
 }
 
 static int xwrite (struct queue* this_queue, const void* buf, size_t count)
@@ -219,26 +212,26 @@ static int xwrite (struct queue* this_queue, const void* buf, size_t count)
   struct local_msgbuf* mp;
   int msgsnd_ret;
 
-  if ( O_RDONLY == ppriv->flags )
-    {
-      LOG_ER("Queue write attempted without appropriate permission.\n");
-      return -1;
-    }
   if ( 0 == buf )
     {
-      LOG_ER("Queue write with NULL buf pointer.\n");
-      return -1;
+      /* Queue write with NULL buf pointer */
+      return QUEUE_MEM_ERROR;
     }
   if ( -1 == ppriv->mq )
     {
-      LOG_ER("Queue write with queue closed.\n");
-      return -1;
+      /* Queue write with queue closed */
+      return QUEUE_CLOSED_ERROR;
+    }
+
+  if ( O_RDONLY == ppriv->flags )
+    {
+      /* Queue write attempted without appropriate permission */
+      return QUEUE_PERMISSION_ERROR;
     }
   if ( count > ppriv->max_sz )
     {
-      LOG_ER("Queue write with count (%d) > max_sz (%d).\n",
-             count, ppriv->max_sz);
-      return -1;
+      /* Queue full */
+      return QUEUE_ERROR;
     }
 
   mp = (struct local_msgbuf*)(((char*)buf) - sizeof(mp->mtype));
@@ -253,18 +246,30 @@ static int xwrite (struct queue* this_queue, const void* buf, size_t count)
        */
       switch (errno )
         {
-        case EAGAIN:
-          --retry;
-          LOG_ER("Queue full, will now retry msgsnd.\n");
-          break;
+          case EAGAIN:
+            --retry;
+            break;
 
-        default:
-          PERROR("msgsnd");
-          return msgsnd_ret;
+          default:
+            if (msgsnd_ret < 0 )
+              {
+                return QUEUE_WRITE_ERROR;
+              }
+            else
+              {
+                return QUEUE_OK;
+              }
         }
     }
 
-  return msgsnd_ret;
+  if (msgsnd_ret < 0 )
+    {
+      return QUEUE_WRITE_ERROR;
+    }
+  else
+    {
+      return QUEUE_OK;
+    }
 }
 
 static void* alloc (struct queue* this_queue, size_t* newcount)
@@ -293,7 +298,8 @@ static void dealloc (struct queue* this_queue, void* buf)
 int queue_msg_ctor (struct queue* this_queue,
                     const char*   path,
                     size_t        max_sz,
-                    size_t        max_cnt)
+                    size_t        max_cnt,
+                    FILE *        log)
 {
   static struct queue_vtbl vtbl = {
       destructor,
@@ -310,16 +316,17 @@ int queue_msg_ctor (struct queue* this_queue,
   ppriv = (struct priv*)malloc (sizeof(struct priv));
   if ( 0 == ppriv )
     {
-      LOG_ER("Failed to allocate %d bytes for queue data.\n", sizeof(*ppriv));
-      return -1;
+      LOG_ER(log,
+             "Failed to allocate %d bytes for queue data.\n", sizeof(*ppriv));
+      return QUEUE_MEM_ERROR;
     }
   memset(ppriv, 0, sizeof(*ppriv));
 
   if ( 0 == (ppriv->path = strdup(path)) )
     {
-      LOG_ER("Strdup failed attempting to dup \"%s\".\n", path);
+      LOG_ER(log, "Failed attempting to dup \"%s\".\n", path);
       free(ppriv);
-      return -1;
+      return QUEUE_MEM_ERROR;
     }
 
   /* We try to convert the path into an appropriate numeric key to
@@ -337,7 +344,7 @@ int queue_msg_ctor (struct queue* this_queue,
   this_queue->vtbl = &vtbl;
   this_queue->priv = ppriv;
 
-  return 0;
+  return QUEUE_OK;
 }
 
 #else  /* if HAVE_SYS_MSG_H */
@@ -345,11 +352,12 @@ int queue_msg_ctor (struct queue* this_queue,
 int queue_msg_ctor (struct queue* this_queue,
                     const char*   path,
                     size_t        max_sz,
-                    size_t        max_cnt)
+                    size_t        max_cnt,
+                    FILE *        log)
 {
   this_queue->vtbl = 0;
   this_queue->priv = 0;
-  return -1;
+  return QUEUE_ERROR;
 }
 
 #endif /* HAVE_SYS_MSG_H */

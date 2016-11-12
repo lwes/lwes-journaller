@@ -82,18 +82,6 @@ int toknam_eq(const unsigned char* toknam, const unsigned char* nam)
   return 0 ;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
-void header_print (const char* buf)
-{
-  LOG_INF("header payload length: %u\n",   header_payload_length(buf));
-  LOG_INF("receipt time:          %llu\n", header_receipt_time(buf));
-  LOG_INF("now:                   %llu\n", time(NULL)*1000L);
-  LOG_INF("sender IP text:        %s\n",   header_sender_ip_formatted(buf));
-  LOG_INF("sender port:           %u\n",   header_sender_port(buf));
-  LOG_INF("site id:               %u\n",   header_site_id(buf));
-}
-
 static uint16_t header_uint16(const char* bytes) {
   return ntohs(*((uint16_t*) bytes));
 }

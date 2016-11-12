@@ -25,39 +25,39 @@
 #include <string.h>
 #include <stdlib.h>
 
-int queue_factory (struct queue* this_queue)
+int queue_factory (struct queue* this_queue, FILE *log)
 {
   /* Create queue object. */
   if ( strcmp(arg_queue_type, ARG_MSG) == 0 )
     {
       if ( queue_msg_ctor(this_queue, arg_queue_name,
-                          arg_queue_max_sz, arg_queue_max_cnt) < 0 )
+                          arg_queue_max_sz, arg_queue_max_cnt, log) < 0 )
         {
-          LOG_ER("No SysV SHM support.\n");
+          LOG_ER(log, "No SysV SHM support.\n");
           return -1;
         }
       else
         {
-          LOG_INF("Using SysV MsgQ.\n");
+          LOG_INF(log, "Using SysV MsgQ.\n");
         }
     }
   else if ( strcmp(arg_queue_type, ARG_MQ) == 0 )
     {
       if ( queue_mqueue_ctor(this_queue, arg_queue_name,
-                             arg_queue_max_sz, arg_queue_max_cnt) < 0 )
+                             arg_queue_max_sz, arg_queue_max_cnt, log) < 0 )
         {
-          LOG_ER("No POSIX mqueue support.\n");
+          LOG_ER(log, "No POSIX mqueue support.\n");
           return -1;
         }
       else
         {
-          LOG_INF("Using POSIX mqueue.\n");
+          LOG_INF(log, "Using POSIX mqueue.\n");
         }
     }
   else
     {
-      LOG_ER("Unrecognized queue type '%s', try \"" ARG_MSG "\" or "
-             "\"" ARG_MQ "\".\n", arg_queue_type);
+      LOG_ER(log, "Unrecognized queue type '%s', try \"" ARG_MSG "\" or "
+                   "\"" ARG_MQ "\".\n", arg_queue_type);
       return -1;
     }
 

@@ -40,16 +40,15 @@ static void do_fork()
 {
   switch ( fork() )
     {
-    case 0:
-      break;
+      case 0:
+        break;
 
-    case -1:
-      PERROR("fork()");
-      exit(EXIT_FAILURE);
+      case -1:
+        exit(EXIT_FAILURE);
 
-    default:
-      exit(EXIT_SUCCESS);
-  }
+      default:
+        exit(EXIT_SUCCESS);
+    }
 }
 
 static void daemonize()
@@ -60,15 +59,13 @@ static void daemonize()
   do_fork();
   if ( setsid() < 0 )
     {
-    PERROR("setsid()");
-    exit(EXIT_FAILURE);
-  }
+      exit(EXIT_FAILURE);
+    }
   do_fork();
 
   umask(0);
   if ( chdir(chdir_root) < 0)
     {
-      LOG_ER("Unable to chdir(\"%s\"): %s\n", chdir_root, strerror(errno));
       exit(EXIT_FAILURE);
     }
 
@@ -76,28 +73,29 @@ static void daemonize()
   fdlimit = sysconf (_SC_OPEN_MAX);
   for ( fd=0; fd<fdlimit; ++fd )
     {
-    close(fd);
+      close(fd);
     }
 
   /* Open 0, 1 and 2. */
   open("/dev/null", O_RDWR);
   if ( dup(0) != 1 )
     {
-      PERROR("Unable to dup() to replace stdout: %s\n");
       exit(EXIT_FAILURE);
     }
   if ( dup(0) != 2 )
     {
-      PERROR("Unable to dup() to replace stderr: %s\n");
       exit(EXIT_FAILURE);
     }
 }
 
 
 /* Write the process ID of this process into a file so we may be
-   easily signaled. */
-
-static void write_pid_file()
+ * easily signaled.
+ *
+ * Function returns 0 if pidfile is wanted and written
+ * and a non-zero number otherwise
+ */
+static int write_pid_file(void)
 {
   /* Write out the PID into the PID file. */
   if ( arg_pid_file )
@@ -105,7 +103,7 @@ static void write_pid_file()
       FILE* pidfp = fopen(arg_pid_file, "w");
       if ( ! pidfp )
         {
-          LOG_ER("Can't open PID file \"%s\"\n", arg_pid_file);
+          return 1;
         }
       else
         {
@@ -125,79 +123,90 @@ static void write_pid_file()
           fclose(pidfp);
         }
     }
+  return 0;
 }
 
 
-/* Delete the PID file, if one was configured. */
-
-static void delete_pid_file()
+/* Delete the PID file, if one was configured.
+ *
+ * Function returns 0 if pidfile is there and deleted
+ * and a non-zero number otherwise
+ */
+static int delete_pid_file()
 {
   if ( arg_pid_file )
     {
       if ( unlink ( arg_pid_file ) < 0 )
         {
-          PERROR("Unable to delete pid file");
+          return errno;
         }
     }
+  return 0;
 }
 
 int main(int argc, const char* argv[])
 {
-  char _buf[100] ; // for log messages
-  char _progver[30] ;
+  FILE *log = get_log (NULL);
 
-  process_options(argc, argv);
+  switch (process_options(argc, argv, log))
+    {
+      case 0:
+        break;
+      case -1:
+        exit(EXIT_SUCCESS);
+      default:
+        exit(EXIT_FAILURE);
+    }
 
   if ( ! arg_nodaemonize )
     {
+      close_log (log); /* close before daemonizing */
       daemonize();
     }
 
-  strcpy(_progver, "lwes-journaller-") ;
-  strcat(_progver, ""VERSION"") ;
+  log = get_log (log); /* reopen */
+  LOG_INF(log, "Initializing - lwes-journaller-%s\n", VERSION);
 
-  strcpy(_buf, "Initializing - ") ;
-  strcat(_buf, _progver) ;
-  strcat(_buf, "\n") ;
-  LOG_INF(_buf);
-
-  write_pid_file();
+  if (write_pid_file() != 0)
+    {
+      LOG_ER(log,"Can't open PID file \"%s\"\n", arg_pid_file);
+    }
 
   if ( arg_njournalls > 30 )
     {
-      LOG_WARN("suspiciously large (%d) number of journals.",
+      LOG_WARN(log, "suspiciously large (%d) number of journals.",
                arg_njournalls);
     }
 
-  strcpy(_buf, "Starting up - ") ;
-  strcat(_buf, _progver) ;
-  strcat(_buf, " using ") ;
-  strcat(_buf, arg_proc_type);
-  strcat(_buf, " model\n");
-  LOG_INF(_buf);
+  LOG_INF(log, "Starting up - lwes-journaller-%s using %s model\n",
+          VERSION, arg_proc_type);
 
   if ( strcmp(arg_proc_type, ARG_PROCESS) == 0 )
     {
-      process_model(argv);
+      process_model(argv, log);
     }
 
   if ( strcmp(arg_proc_type, ARG_THREAD) == 0 )
     {
-      thread_model();
+      thread_model(log);
     }
 
   if ( strcmp(arg_proc_type, ARG_SERIAL) == 0 )
     {
-      serial_model();
+      serial_model(log);
     }
 
-  strcpy(_buf, "Normal shutdown complete - ") ;
-  strcat(_buf, _progver) ;
-  strcat(_buf, "\n") ;
-  LOG_INF(_buf);
-
-  delete_pid_file();
+  int r = 0;
+  if ((r = delete_pid_file()) < 0)
+    {
+      LOG_ER(log,"Unable to delete pid file : %s\n",
+             delete_pid_file, strerror(r));
+    }
   options_destructor();
+
+  LOG_INF(log, "Normal shutdown complete - lwes-journaller-%s\n", VERSION);
+
+  close_log (log);
 
   return 0;
 }

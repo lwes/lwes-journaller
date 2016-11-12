@@ -44,11 +44,11 @@ struct priv {
   long long nbytes_written;
 };
 
-static void destructor(struct journal* this_journal)
+static void destructor(struct journal* this_journal, FILE *log)
 {
   struct priv* ppriv;
 
-  this_journal->vtbl->close(this_journal);
+  this_journal->vtbl->close(this_journal, log);
 
   ppriv = (struct priv*)this_journal->priv;
   free(ppriv->path);
@@ -58,7 +58,7 @@ static void destructor(struct journal* this_journal)
   this_journal->priv = 0;
 }
 
-static int xopen(struct journal* this_journal, int flags)
+static int xopen(struct journal* this_journal, int flags, FILE *log)
 {
   struct priv* ppriv = (struct priv*)this_journal->priv;
   const char* mode;
@@ -78,7 +78,7 @@ static int xopen(struct journal* this_journal, int flags)
     mode = "wb";
     if ( 0 == stat(ppriv->path, &stbuf) ) {
       epoch = stbuf.st_ctime;
-      if (stbuf.st_size > 0) rename_journal(ppriv->path, &epoch);
+      if (stbuf.st_size > 0) rename_journal(ppriv->path, &epoch, log);
     }
     break;
 
@@ -102,7 +102,7 @@ static int xopen(struct journal* this_journal, int flags)
 
       if ( -1 == statvfs(ppriv->path, &stfsbuf) )
         {
-          LOG_WARN("Unable to determine free space available for %s.\n",
+          LOG_WARN(log,"Unable to determine free space available for %s.\n",
                    ppriv->path);
         }
       else
@@ -115,11 +115,11 @@ static int xopen(struct journal* this_journal, int flags)
 
           if ( lsz > (abs(stfsbuf.f_bavail) / 2.) )
             {
-              LOG_WARN("Low on disk space for new gz log %s.\n",
+              LOG_WARN(log,"Low on disk space for new gz log %s.\n",
                        ppriv->path);
-              LOG_WARN("Available space is %d blocks of %d bytes each.\n",
+              LOG_WARN(log,"Available space is %d blocks of %d bytes each.\n",
                        stfsbuf.f_bavail, bsize);
-              LOG_WARN("Last log file contained %lld bytes.\n",
+              LOG_WARN(log,"Last log file contained %lld bytes.\n",
                        ppriv->nbytes_written);
             }
         }
@@ -132,7 +132,7 @@ static int xopen(struct journal* this_journal, int flags)
   return 0;
 }
 
-static int xclose(struct journal* this_journal)
+static int xclose(struct journal* this_journal, FILE *log)
 {
   struct priv* ppriv = (struct priv*)this_journal->priv;
 
@@ -147,7 +147,7 @@ static int xclose(struct journal* this_journal)
       return -1;
     }
 
-  rename_journal(ppriv->path, &ppriv->ot);
+  rename_journal(ppriv->path, &ppriv->ot, log);
   ppriv->fp = 0;
   return 0;
 }
@@ -178,7 +178,7 @@ static int tailmatch(const char* str, const char* tail)
   return strcmp(str + (strsz - tailsz), tail) == 0;
 }
 
-int journal_gz_ctor(struct journal* this_journal, const char* path)
+int journal_gz_ctor(struct journal* this_journal, const char* path, FILE *log)
 {
   static struct journal_vtbl vtbl = {
       destructor,
@@ -193,24 +193,24 @@ int journal_gz_ctor(struct journal* this_journal, const char* path)
 
   if ( ! tailmatch(path, JOURNAL_GZ_EXT) )
     {
-      LOG_WARN("Compressed journal file (\"%s\") doesn't end with "
-               "expected extension (\"%s\").\n",
-               path, JOURNAL_GZ_EXT);
+      LOG_WARN(log, "Compressed journal file (\"%s\") doesn't end with "
+                     "expected extension (\"%s\").\n",
+                     path, JOURNAL_GZ_EXT);
     }
 
   ppriv = (struct priv*)malloc(sizeof(struct priv));
   if ( 0 == ppriv )
     {
-      LOG_ER("Malloc failed attempting to allocate %d bytes.\n",
-             sizeof(*ppriv));
+      LOG_ER(log, "Malloc failed attempting to allocate %d bytes.\n",
+                   sizeof(*ppriv));
       return -1;
     }
   memset(ppriv, 0, sizeof(*ppriv));
 
   if ( 0 == (ppriv->path = strdup(path)) )
     {
-      LOG_ER("The strdup() function failed attempting to dup \"%s\".\n",
-             path);
+      LOG_ER(log,"The strdup() function failed attempting to dup \"%s\".\n",
+                  path);
       free(ppriv);
       return -1;
     }
@@ -223,7 +223,7 @@ int journal_gz_ctor(struct journal* this_journal, const char* path)
 
 #else  /* if HAVE_LIBZ */
 
-int journal_gz_ctor(struct journal* this_journal, const char* path)
+int journal_gz_ctor(struct journal* this_journal, const char* path, FILE *log)
 {
   this_journal->vtbl = 0;
   this_journal->priv = 0;

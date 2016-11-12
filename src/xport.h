@@ -15,6 +15,7 @@
 #define XPORT_DOT_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 #define XPORT_INTR -2
 
@@ -36,6 +37,6 @@ struct xport {
   void*                 priv;
 };
 
-int xport_factory(struct xport* this_xport);
+int xport_factory(struct xport* this_xport, FILE *log);
 
 #endif /* XPORT_DOT_H */

@@ -1,0 +1,74 @@
+#!/bin/sh
+
+cwd=`pwd`
+pidfile="$cwd/tmp/lwes-journaller.pid"
+logfilep="$cwd/tmp/lwes-journaller"
+other=""
+model_type=""
+while [ $# -gt 0 ]; do
+  arg=$1;
+  case $arg in
+    "emit")
+      file=$2
+      shift
+      exec $cwd/lwes-journal-emitter -o lwes::224.0.0.69:11311 -r 100 $file
+      ;;
+    "rotate-journal")
+      sudo kill -HUP `cat $pidfile`
+      exit $?
+      ;;
+    "rotate-log")
+      sudo mv "${logfilep}.log" "$logfilep.`date +%Y%m%d%H%M%S`.log"
+      sudo kill -USR1 `cat $pidfile`
+      exit $?
+      ;;
+    "kill")
+      sudo kill -QUIT `cat $pidfile`
+      exit $?
+      ;;
+    "foreground" )
+      other="$other --nodaemonize"
+      ;;
+    "thread"|"process"|"serial" )
+      if test -z $model; then
+        model=$arg
+      fi
+      ;;
+    "memcheck" )
+      if test -z $cmd ; then
+         cmd="valgrind --tool=memcheck --num-callers=10"
+      fi
+      ;;
+    "leakcheck" )
+      if test -z $cmd ; then
+         cmd="valgrind --tool=memcheck --num-callers=10 --leak-check=yes --leak-resolution=high --show-reachable=yes"
+      fi
+      ;;
+    "helgrind" )
+      if test -z $cmd ; then
+         cmd="valgrind --tool=helgrind --read-var-info=yes --history-level=approx"
+      fi
+      ;;
+  esac
+  shift
+done
+if test -z $model; then
+  model="serial"
+fi
+
+rm -rf tmp
+mkdir -p tmp
+cd tmp
+sudo $cmd \
+  $cwd/lwes-journaller \
+  --port=11311 \
+  --pid-file=$pidfile \
+  --log-level=15 \
+  --log-file="$logfilep.log" \
+  --mondemand-host=centos65.local \
+  --mondemand-ip=127.0.0.1 \
+  --mondemand-port=20402 \
+  --journal-rotate-interval 60 \
+  --real-time \
+  $other \
+  $cwd/tmp/all_events.log.gz

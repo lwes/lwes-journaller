@@ -52,8 +52,6 @@ extern int  header_is_rotate(void* buf);
 extern void header_fingerprint(void* buf, struct packet_check* pc);
 extern int  toknam_eq(const unsigned char* toknam, const unsigned char* nam) ;
 
-extern void header_print(const char* buf);
-
 uint16_t    header_payload_length(const char* header);       /* Size of message body. */
 uint64_t    header_receipt_time(const char* header);         /* Now in msec. */
 const char* header_sender_ip_formatted(const char* header);  /* Sender IP address, formatted. do not free(). */

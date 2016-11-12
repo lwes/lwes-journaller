@@ -14,6 +14,8 @@
 #ifndef PROCESS_DOT_H
 #define PROCESS_DOT_H
 
-void process_model(const char* argv[]);
+#include <stdio.h>
+
+void process_model(const char* argv[], FILE *log);
 
 #endif /* PROCESS_DOT_H */

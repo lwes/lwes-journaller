@@ -101,3 +101,11 @@ micro_timediff (struct timeval *start, struct timeval *end)
     }
   return (unsigned long long)computed;
 }
+
+unsigned long long
+millis_now (void)
+{
+  struct timeval t;
+  micro_now(&t);
+  return millis_timestamp (&t);
+}

@@ -14,9 +14,12 @@
 #ifndef QUEUE_MSG_DOT_H
 #define QUEUE_MSG_DOT_H
 
+#include <stdio.h>
+
 int queue_msg_ctor (struct queue* this_queue,
                     const char*   path,
                     size_t        max_sz,
-                    size_t        max_cnt);
+                    size_t        max_cnt,
+                    FILE *        log);
 
 #endif /* QUEUE_MSG_DOT_H */

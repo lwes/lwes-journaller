@@ -36,7 +36,7 @@
 /* Start a new process via fork() and exec() Return the process ID of
    the new child process. */
 
-static int start_program(const char* program, const char* argv[])
+static int start_program(const char* program, const char* argv[], FILE *log)
 {
   int     i;
   int     pid;
@@ -49,19 +49,19 @@ static int start_program(const char* program, const char* argv[])
 
   if ( strlen(argv[0]) > PATH_MAX )
     {
-      LOG_ER("Program path too long: %s.\n", argv[0]);
+      LOG_ER(log,"Program path too long: %s.\n", argv[0]);
       exit(EXIT_FAILURE);
     }
   if ( strlen(program) > NAME_MAX )
     {
-      LOG_ER("Program name too long: %s.\n", program);
+      LOG_ER(log,"Program name too long: %s.\n", program);
       exit(EXIT_FAILURE);
     }
 
   /* Create a child process. */
   if ( (pid = fork()) < 0 )
     {
-      PERROR("fork()");
+      PERROR(log,"fork()");
       exit(EXIT_FAILURE);
     }
 
@@ -92,34 +92,48 @@ static int start_program(const char* program, const char* argv[])
 
   argv[0] = prg;
 
-  LOG_PROG("About to execvp(\"%s\",\n", prg);
+  LOG_PROG(log,"About to execvp(\"%s\",\n", prg);
   for ( i=0; argv[i]; ++i )
     {
-      LOG_PROG("  argv[%d] == \"%s\"\n", i, argv[i]);
+      LOG_PROG(log,"  argv[%d] == \"%s\"\n", i, argv[i]);
     }
-  LOG_PROG("  argv[%d] == NULL\n\n", i);
+  LOG_PROG(log,"  argv[%d] == NULL\n\n", i);
+
+  /* close the log in the child here, it will be reopened by the child */
+//  close_log (log);
 
   /* Replace our current process image with the new one. */
   execvp(prg, (char** const)argv);
 
   /* Any return is an error. */
-  PERROR("execvp()");
-  LOG_ER("The execvp() function returned, exiting.\n");
+  PERROR(NULL,"execvp()");
+  LOG_ER(NULL,"The execvp() function returned, exiting.\n");
   exit(EXIT_FAILURE);      /* Should never get to this anyway. */
 }
 
+static void signal_pid (int sig, int pid)
+{
+  if ( -1 != pid )
+    {
+      kill(pid, sig);
+    }
+}
+
+
 /* Start the external processes, then loop to restart any program
    that dies. */
-void process_model(const char* argv[])
+void process_model(const char* argv[], FILE *log)
 {
   int waiting_pid = -1;
   int queue_to_journal_pid = -1;
   int xport_to_queue_pid = -1;
-  int first = 0;
 
   /* this is the main process, so we install all the handlers here */
-  install_signal_handlers ();
-  install_rotate_signal_handlers();
+  install_termination_signal_handlers (log);
+  install_rotate_signal_handlers (log);
+  install_interval_rotate_handlers (log, 1);
+  /* main process rotates on USR1 */
+  install_log_rotate_signal_handlers (log, 1, SIGUSR1);
 
   while ( ! gbl_done )
     {
@@ -127,17 +141,12 @@ void process_model(const char* argv[])
 
       if ((-1 == queue_to_journal_pid) || (waiting_pid == queue_to_journal_pid))
         {
-          queue_to_journal_pid = start_program("queue_to_journal", argv);
+          queue_to_journal_pid = start_program("queue_to_journal", argv, log);
         }
 
       if ((-1 == xport_to_queue_pid) || (waiting_pid == xport_to_queue_pid))
         {
-          xport_to_queue_pid = start_program("xport_to_queue", argv);
-        }
-      if (!first)
-        {
-          install_interval_rotate_handlers(1);
-          first = 1;
+          xport_to_queue_pid = start_program("xport_to_queue", argv, log);
         }
 
       /* Wait and restart any program that exits. */
@@ -150,23 +159,21 @@ void process_model(const char* argv[])
            * that writes journals. */
           if ( gbl_rotate_dequeue )
             {
-              if ( -1 != queue_to_journal_pid )
-                {
-                  LOG_PROG("Sending SIGHUP to queue_to_journal[%d] to "
-                           "trigger log rotate.\n", queue_to_journal_pid);
-                  kill(queue_to_journal_pid, SIGHUP);
-                }
-              __sync_bool_compare_and_swap(&gbl_rotate_dequeue,1,0);
+              signal_pid (SIGHUP, queue_to_journal_pid);
+              CAS_OFF(gbl_rotate_dequeue);
             }
           if ( gbl_rotate_enqueue )
             {
-              if ( -1 != xport_to_queue_pid )
-                {
-                  LOG_PROG("Sending SIGHUP to xport_to_queue[%d] to "
-                           "trigger log rotate.\n", xport_to_queue_pid);
-                  kill(xport_to_queue_pid, SIGHUP);
-                }
-              __sync_bool_compare_and_swap(&gbl_rotate_enqueue,1,0);
+              signal_pid (SIGHUP, xport_to_queue_pid);
+              CAS_OFF(gbl_rotate_enqueue);
+            }
+          if (gbl_rotate_main_log)
+            {
+              log = get_log (log);
+              CAS_OFF (gbl_rotate_main_log);
+              /* need to signal both sub-pids */
+              signal_pid(SIGUSR1, xport_to_queue_pid);
+              signal_pid(SIGUSR2, queue_to_journal_pid);
             }
           continue;
         }
@@ -191,14 +198,12 @@ void process_model(const char* argv[])
               program = "xport_to_queue";
             }
 
-          log_msg(LOG_WARNING, __FILE__, __LINE__,
-                  "Our %s process exited (pid=%d) with "
-                  "signal %d, restarting.\n",
-                  program, waiting_pid, WTERMSIG(status));
+          LOG_WARN(log,
+                   "Our %s process exited (pid=%d) with "
+                   "signal %d, restarting.\n",
+                   program, waiting_pid, WTERMSIG(status));
         }
     }
-
-  LOG_INF("Shutting down.");
 
   /* We give the children a chance to run before we kill them. */
   sleep(1);
@@ -209,7 +214,7 @@ void process_model(const char* argv[])
     ;
   if ( errno != ECHILD && errno != EINTR )
     {
-      PERROR("wait");
+      PERROR(log,"wait");
     }
 }
 

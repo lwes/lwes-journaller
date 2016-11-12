@@ -20,16 +20,8 @@
 #include <string.h>
 #include <stdio.h>
 
-int xport_factory(struct xport* this_xport)
+int xport_factory(struct xport* this_xport, FILE *log)
 {
-  /* Only UDP transport supported. */
-  if ( strcmp(arg_xport, "udp") != 0 )
-    {
-      LOG_ER("unrecognized transport type \"%s\", try \"udp\"\n",
-             arg_xport);
-      return -1;
-    }
-
   /* Since we currently have only one xport type: */
-  return xport_udp_ctor (this_xport, arg_ip, arg_interface, arg_port);
+  return xport_udp_ctor (this_xport, arg_ip, arg_interface, arg_port, log);
 }

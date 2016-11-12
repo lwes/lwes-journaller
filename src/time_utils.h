@@ -35,4 +35,7 @@ millis_timestamp (struct timeval *val);
 unsigned long long
 micro_timestamp (struct timeval *val);
 
+unsigned long long
+millis_now (void);
+
 #endif /* TIME_UTILS_DOT_H */

@@ -14,20 +14,16 @@
 #ifndef LOG_MONDEMAND_H
 #define LOG_MONDEMAND_H
 
-#include "config.h"
 #include "stats.h"
 
-#ifdef HAVE_MONDEMAND
-#include <mondemand.h>
-#endif
+void md_enqueuer_create (struct enqueuer_stats *stats);
+void md_enqueuer_stats (const struct enqueuer_stats* stats);
+void md_enqueuer_flush (const struct enqueuer_stats* stats);
+void md_enqueuer_destroy(struct enqueuer_stats* stats);
 
-void mondemand_enqueuer_stats_init (void);
-void mondemand_dequeuer_stats_init (void);
-void mondemand_enqueuer_stats (const struct enqueuer_stats* this_stats, time_t now);
-void mondemand_dequeuer_stats (const struct dequeuer_stats* this_stats, time_t now);
-void mondemand_enqueuer_flush (void);
-void mondemand_dequeuer_flush (void);
-void mondemand_enqueuer_stats_free (void);
-void mondemand_dequeuer_stats_free (void);
+void md_dequeuer_create (struct dequeuer_stats *stats);
+void md_dequeuer_stats (const struct dequeuer_stats* stats);
+void md_dequeuer_flush (const struct dequeuer_stats* stats);
+void md_dequeuer_destroy (struct dequeuer_stats* stats);
 
-#endif
+#endif /* LOG_MONDEMAND_H */

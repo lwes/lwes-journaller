@@ -15,12 +15,32 @@
 
 #include "opt.h"
 #include "sig.h"
+#include "log.h"
 #include "xport_to_queue.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 int main(int argc, const char* argv[])
 {
-  install_signal_handlers();
-  install_rotate_signal_handlers();
-  process_options(argc, argv);
-  return xport_to_queue();
+  FILE *log = get_log(NULL);
+
+  switch (process_options(argc, argv, log))
+    {
+      case 0:
+        break;
+      case -1:
+        exit(EXIT_SUCCESS);
+      default:
+        exit(EXIT_FAILURE);
+    }
+
+  install_termination_signal_handlers (log);
+  install_rotate_signal_handlers (log);
+  install_log_rotate_signal_handlers (log, 0, SIGUSR1);
+
+  int r = xport_to_queue (log);
+
+  close_log (log);
+
+  return r;
 }

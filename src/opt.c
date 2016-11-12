@@ -111,7 +111,7 @@ int            arg_mondemand_port  = 20402;
 const char*    arg_mondemand_program_id = "lwes-journaller";
 #endif
 
-void process_options(int argc, const char* argv[])
+int process_options(int argc, const char* argv[], FILE *log)
 {
   static const struct poptOption options[] = {
     { "args",          0,  POPT_ARG_NONE,   &arg_args,           0, "Print command line arguments, then exit", 0 },
@@ -173,10 +173,10 @@ void process_options(int argc, const char* argv[])
           switch ( rc )
             {
             case POPT_ERROR_BADOPT:
-              /* You might waht to check options of other types here... */
+              /* You might want to check options of other types here... */
 
             default:
-              LOG_ER("%s: %s\n",
+              LOG_ER(log, "%s: %s\n",
                      poptBadOption(optCon, POPT_BADOPTION_NOALIAS),
                      poptStrerror(rc));
               ++bad_options;
@@ -218,7 +218,7 @@ void process_options(int argc, const char* argv[])
       struct passwd *pw_entry = getpwnam(arg_journal_user);
       if (pw_entry==NULL)
         {
-          LOG_ER("%s was told to use a file owner (%s) that could not be found\n",
+          LOG_ER(log, "%s was told to use a file owner (%s) that could not be found\n",
                  arg_basename, arg_journal_user);
           ++bad_options;
         }
@@ -286,7 +286,7 @@ void process_options(int argc, const char* argv[])
 
       printf("Bug reports to %s\n\n", PACKAGE_BUGREPORT);
 
-      exit(EXIT_SUCCESS);
+      return -1;
     }
 
   if ( arg_args )
@@ -295,8 +295,7 @@ void process_options(int argc, const char* argv[])
 
       log_get_mask_string(log_level_string, sizeof(log_level_string));
 
-      log_msg(LOG_INFO, __FILE__, __LINE__,
-              "arguments:\n"
+      printf("arguments:\n"
               "  arg_basename == \"%s\"\n"
               "  arg_interface == \"%s\"\n"
               "  arg_ip == \"%s\"\n"
@@ -343,12 +342,11 @@ void process_options(int argc, const char* argv[])
 
       for ( arg_njournalls=0; arg_journalls[arg_njournalls]; ++arg_njournalls )
         {
-          log_msg(LOG_INFO, __FILE__, __LINE__,
-                  "journall[%d] == %s\n",
-                  arg_njournalls,
-                  arg_journalls[arg_njournalls]);
+          printf("journall[%d] == %s\n",
+                 arg_njournalls,
+                 arg_journalls[arg_njournalls]);
         }
-      exit(EXIT_SUCCESS);
+      return -1;
     }
 
 #ifdef HAVE_MONDEMAND
@@ -364,33 +362,38 @@ void process_options(int argc, const char* argv[])
         }
       else
         {
-          LOG_WARN("Mondemand requires a hostname, but none was provided or"
+          LOG_WARN(log,
+                   "Mondemand requires a hostname, but none was provided or"
                    " available.  Disabling mondemand.");
           arg_mondemand_ip = NULL;
         }
     }
-#endif 
+#endif
 
   if (      arg_journalls == NULL
        || ! arg_journalls[0]
        || ! strrchr(arg_journalls[0],'/') )
     {
-      LOG_ER("%s requires output pathnames in form "
+      LOG_ER(log, "%s requires output pathnames in form "
              "'/path/to/archive/file.gz'\n", arg_basename);
       ++bad_options;
     }
 
   if (arg_journal_rotate_interval < 0)
     {
-      LOG_ER("--journal-rotate-interval should be positive\n");
+      LOG_ER(log, "--journal-rotate-interval should be positive\n");
+      ++bad_options;
+    }
+
+  if ( strcmp(arg_xport, "udp") != 0 )
+    {
+      LOG_ER(log, "unrecognized transport type \"%s\", try \"udp\"\n",
+             arg_xport);
       ++bad_options;
     }
 
   poptFreeContext(optCon);
-  if ( bad_options )
-    {
-      exit(EXIT_FAILURE);
-    }
+  return bad_options;
 }
 
 void options_destructor (void)

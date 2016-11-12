@@ -10,17 +10,13 @@
  * limitations under the License. See accompanying LICENSE file.        *
  *======================================================================*/
 
+#include "config.h"
 #include "lwes_mondemand.h"
-#include "log.h"
 #include "opt.h"
-#include "stats.h"
-#include <string.h>
-#include <stdio.h>
 
 #ifdef HAVE_MONDEMAND
+#include <mondemand.h>
 
-struct mondemand_client *enqueue_client;
-struct mondemand_client *dequeue_client;
 /* set a counter in mondemand.
  * NOTE: we need to drop into the lower level call since the journaller
  * is keeping counters itself, and there's no high level call to set a counter
@@ -33,138 +29,144 @@ struct mondemand_client *dequeue_client;
 /* set a gauge in mondemand */
 #define mondemand_set(client, x) mondemand_set_key_by_val(client, #x, (MondemandStatValue)(stats->x))
 
-/* FIXME: I don't like this, but trying to get serial/thread and process to
- * all work properly, so lots of code duplication for the moment
- */
-void mondemand_enqueuer_stats_init ()
+static
+struct mondemand_client *
+create_client (void)
 {
-  if (enqueue_client==NULL
-      && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
+  struct mondemand_client *client = NULL;
+  if (arg_mondemand_host != NULL && arg_mondemand_ip != NULL)
     {
       struct mondemand_transport *transport = NULL;
-      enqueue_client = mondemand_client_create(arg_mondemand_program_id);
-      mondemand_set_context(enqueue_client,"host",arg_mondemand_host);
-      transport = mondemand_transport_lwes_create(arg_mondemand_ip,arg_mondemand_port,NULL,0,0);
+      client = mondemand_client_create(arg_mondemand_program_id);
+      mondemand_set_context(client,"host",arg_mondemand_host);
+      transport =
+        mondemand_transport_lwes_create( arg_mondemand_ip,
+                                         arg_mondemand_port,NULL,0,0);
       if (transport)
         {
-          mondemand_add_transport(enqueue_client, transport);
+          mondemand_add_transport (client, transport);
         }
       else
         {
-          LOG_WARN("Unable to create mondemand transport to connect to %s:%d",arg_mondemand_ip,arg_mondemand_port);
+          mondemand_client_destroy (client);
+          return NULL;
         }
     }
+  return client;
 }
 
-void mondemand_dequeuer_stats_init ()
+void
+md_enqueuer_create (struct enqueuer_stats *stats)
 {
-  if (dequeue_client==NULL
-      && arg_mondemand_host!=NULL && arg_mondemand_ip!=NULL)
-    {
-      struct mondemand_transport *transport = NULL;
-      dequeue_client = mondemand_client_create(arg_mondemand_program_id);
-      mondemand_set_context(dequeue_client,"host",arg_mondemand_host);
-      transport = mondemand_transport_lwes_create(arg_mondemand_ip,arg_mondemand_port,NULL,0,0);
-      if (transport)
-        {
-          mondemand_add_transport(dequeue_client, transport);
-        }
-      else
-        {
-          LOG_WARN("Unable to create mondemand transport to connect to %s:%d",arg_mondemand_ip,arg_mondemand_port);
-        }
-    }
+  stats->client = create_client();
 }
 
-void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
+void
+md_enqueuer_stats (const struct enqueuer_stats* stats)
 {
-  (void)now; // appease -Wall -Werror
-  if (enqueue_client==NULL) return;
-  mondemand_set(enqueue_client, socket_errors_since_last_rotate);
-  mondemand_inc(enqueue_client, bytes_received_total);
-  mondemand_set(enqueue_client, bytes_received_since_last_rotate);
-  mondemand_inc(enqueue_client, packets_received_total);
-  mondemand_set(enqueue_client, packets_received_since_last_rotate);
+  if (stats->client==NULL) return;
+  mondemand_set (stats->client, socket_errors_since_last_rotate);
+  mondemand_inc (stats->client, bytes_received_total);
+  mondemand_set (stats->client, bytes_received_since_last_rotate);
+  mondemand_inc (stats->client, packets_received_total);
+  mondemand_set (stats->client, packets_received_since_last_rotate);
 }
 
-void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
+void md_enqueuer_flush (const struct enqueuer_stats* stats) {
+  mondemand_flush_stats (stats->client);
+}
+
+void md_enqueuer_destroy(struct enqueuer_stats* stats)
 {
-  (void)now; // appease -Wall -Werror
-  if (dequeue_client==NULL) return;
-  mondemand_set(dequeue_client, loss_since_last_rotate);
-  mondemand_inc(dequeue_client, bytes_written_total);
-  mondemand_set(dequeue_client, bytes_written_since_last_rotate);
-  mondemand_inc(dequeue_client, packets_written_total);
-  mondemand_set(dequeue_client, packets_written_since_last_rotate);
-  mondemand_inc(dequeue_client, bytes_written_in_burst);
-  mondemand_inc(dequeue_client, packets_written_in_burst);
-  mondemand_set(dequeue_client, hiq);
-  mondemand_set(dequeue_client, hiq_start);
-  mondemand_set(dequeue_client, hiq_last);
-  mondemand_set(dequeue_client, hiq_since_last_rotate);
-  mondemand_set(dequeue_client, bytes_written_in_burst_since_last_rotate);
-  mondemand_set(dequeue_client, packets_written_in_burst_since_last_rotate);
-  mondemand_set(dequeue_client, start_time);
-  mondemand_set(dequeue_client, last_rotate);
+  mondemand_client_destroy (stats->client);
+  stats->client = NULL;
 }
 
-void mondemand_enqueuer_flush (void) {
-  if (enqueue_client != NULL)
-    {
-      mondemand_flush_stats(enqueue_client);
-    }
-}
-
-void mondemand_dequeuer_flush (void) {
-  if (dequeue_client != NULL)
-    {
-      mondemand_flush_stats(dequeue_client);
-    }
-}
-
-void mondemand_enqueuer_stats_free (void)
+void
+md_dequeuer_create (struct dequeuer_stats *stats)
 {
-  mondemand_client_destroy (enqueue_client);
+  stats->client = create_client();
 }
 
-void mondemand_dequeuer_stats_free (void)
+void
+md_dequeuer_stats (const struct dequeuer_stats* stats)
 {
-  mondemand_client_destroy (dequeue_client);
+  if (stats->client==NULL) return;
+  mondemand_set (stats->client, loss_since_last_rotate);
+  mondemand_inc (stats->client, bytes_written_total);
+  mondemand_set (stats->client, bytes_written_since_last_rotate);
+  mondemand_inc (stats->client, packets_written_total);
+  mondemand_set (stats->client, packets_written_since_last_rotate);
+  mondemand_inc (stats->client, bytes_written_in_burst);
+  mondemand_inc (stats->client, packets_written_in_burst);
+  mondemand_set (stats->client, hiq);
+  mondemand_set (stats->client, hiq_start);
+  mondemand_set (stats->client, hiq_last);
+  mondemand_set (stats->client, hiq_since_last_rotate);
+  mondemand_set (stats->client, bytes_written_in_burst_since_last_rotate);
+  mondemand_set (stats->client, packets_written_in_burst_since_last_rotate);
+  mondemand_set (stats->client, start_time);
+  mondemand_set (stats->client, last_rotate);
 }
 
-#else /* HAVE_MONDEMAND */
+void md_dequeuer_flush (const struct dequeuer_stats* stats) {
+  mondemand_flush_stats (stats->client);
+}
 
-void mondemand_enqueuer_stats_init (void)
+void md_dequeuer_destroy(struct dequeuer_stats* stats)
 {
+  mondemand_client_destroy (stats->client);
+  stats->client = NULL;
 }
 
-void mondemand_dequeuer_stats_init (void)
+#else
+
+void
+md_enqueuer_create (struct enqueuer_stats *stats)
 {
+  (void)stats; /* appease -Wall -Werror */
 }
 
-void mondemand_enqueuer_stats (const struct enqueuer_stats* stats, time_t now)
+void
+md_enqueuer_stats (const struct enqueuer_stats* stats)
 {
-  (void)stats;
-  (void)now;
+  (void)stats; /* appease -Wall -Werror */
 }
 
-void mondemand_dequeuer_stats (const struct dequeuer_stats* stats, time_t now)
+void
+md_enqueuer_flush (const struct enqueuer_stats* stats)
 {
-  (void)stats;
-  (void)now;
+  (void)stats; /* appease -Wall -Werror */
 }
 
-void mondemand_enqueuer_flush (void) {
-}
-
-void mondemand_dequeuer_flush (void) {
-}
-
-void mondemand_enqueuer_stats_free (void)
+void
+md_enqueuer_destroy(struct enqueuer_stats* stats)
 {
+  (void)stats; /* appease -Wall -Werror */
 }
 
-void mondemand_dequeuer_stats_free (void)
+void
+md_dequeuer_create (struct dequeuer_stats *stats)
 {
+  (void)stats; /* appease -Wall -Werror */
 }
+
+void
+md_dequeuer_stats (const struct dequeuer_stats* stats)
+{
+  (void)stats; /* appease -Wall -Werror */
+}
+
+void
+md_dequeuer_flush (const struct dequeuer_stats* stats)
+{
+  (void)stats; /* appease -Wall -Werror */
+}
+
+void
+md_dequeuer_destroy (struct dequeuer_stats* stats)
+{
+  (void)stats; /* appease -Wall -Werror */
+}
+
 #endif /* HAVE_MONDEMAND */

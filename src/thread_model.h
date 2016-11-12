@@ -14,6 +14,8 @@
 #ifndef THREAD_DOT_H
 #define THREAD_DOT_H
 
-void thread_model (void);
+#include <stdio.h>
+
+void thread_model (FILE *log);
 
 #endif /* THREAD_DOT_H */

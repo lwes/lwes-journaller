@@ -118,11 +118,11 @@ static int xwrite (struct xport* this_xport, const void* buf, size_t count)
 int xport_udp_ctor (struct xport* this_xport,
                     const char*   address,
                     const char*   iface,
-                    short         port)
+                    short         port,
+                    FILE *        log)
 {
   static struct xport_vtbl vtbl = {
       destructor,
-
       xopen, xclose,
       xread, xwrite
   };
@@ -135,7 +135,8 @@ int xport_udp_ctor (struct xport* this_xport,
   ppriv = (struct ppriv*)malloc(sizeof(*ppriv));
   if ( 0 == ppriv )
     {
-      LOG_ER("Failed to allocate %d bytes for xport data.\n", sizeof(*ppriv));
+      LOG_ER(log,
+             "Failed to allocate %d bytes for xport data.\n", sizeof(*ppriv));
       return -1;
     }
   memset(ppriv, 0, sizeof(*ppriv));

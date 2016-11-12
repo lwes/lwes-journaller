@@ -17,6 +17,7 @@
 int xport_udp_ctor (struct xport* this_xport,
                     const char*   address,
                     const char*   iface,
-                    short         port);
+                    short         port,
+                    FILE *        log);
 
 #endif /* XPORT_UDP_DOT_H */

@@ -14,6 +14,8 @@
 #ifndef XPORT_TO_QUEUE_DOT_H
 #define XPORT_TO_QUEUE_DOT_H
 
-int xport_to_queue (void);
+#include <stdio.h>
+
+int xport_to_queue (FILE *log);
 
 #endif /* XPORT_TO_QUEUE_DOT_H */

@@ -15,6 +15,7 @@
 #define JOURNAL_DOT_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 /* Journal methods:
  *
@@ -33,10 +34,10 @@
 struct journal;
 
 struct journal_vtbl {
-  void  (*destructor)   (struct journal* this_journal);
+  void  (*destructor)   (struct journal* this_journal, FILE *log);
 
-  int   (*open)         (struct journal* this_journal, int flags);
-  int   (*close)        (struct journal* this_journal);
+  int   (*open)         (struct journal* this_journal, int flags, FILE *log);
+  int   (*close)        (struct journal* this_journal, FILE *log);
 
   int   (*read)         (struct journal* this_journal, void* buf, size_t count);
   int   (*write)        (struct journal* this_journal, void* buf, size_t count);
@@ -47,7 +48,6 @@ struct journal {
   void*                 priv;
 };
 
-int journal_factory(struct journal* jrn, const char* name);
-typedef int (*lwes_journaller_journal_init_t)(struct journal*, const char*) ;
+int journal_factory(struct journal* jrn, const char* name, FILE *log);
 
 #endif /* JOURNAL_DOT_H */

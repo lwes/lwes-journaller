@@ -19,6 +19,7 @@
 #include "serial_model.h"
 #include "sig.h"
 #include "stats.h"
+#include "time_utils.h"
 #include "xport.h"
 
 #include <fcntl.h>
@@ -53,97 +54,98 @@ unsigned long long       count     = 0;
  */
 unsigned long long       pending   = 0;
 
-static void serial_open_journal(void);
+static void serial_open_journal(FILE *log);
 
-static void serial_ctor(void)
+static void serial_ctor(FILE *log)
 {
-  install_signal_handlers();
-  install_rotate_signal_handlers();
-  install_interval_rotate_handlers(1);
+  install_termination_signal_handlers(log);
+  install_rotate_signal_handlers(log);
+  install_interval_rotate_handlers(log, 1);
+  install_log_rotate_signal_handlers(log, 1, SIGUSR1);
 
   depth_dtm = arg_queue_test_interval;
 
   if ( enqueuer_stats_ctor (&est) < 0 )
     {
-      LOG_ER("Failed to create initialize enqueuer stats.\n");
+      LOG_ER(log, "Failed to create initialize enqueuer stats.\n");
       exit(EXIT_FAILURE);
     }
 
   if ( dequeuer_stats_ctor (&dst) < 0 )
     {
-      LOG_ER("Failed to create initialize dequeuer stats.\n");
+      LOG_ER(log, "Failed to create initialize dequeuer stats.\n");
       exit(EXIT_FAILURE);
     }
 
   memset(buf, 0, BUFLEN);           /* Clear the message. */
 
-  if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
+  if ( (xport_factory(&xpt, log) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
     {
-      LOG_ER("Failed to create xport object.\n");
+      LOG_ER(log, "Failed to create xport object.\n");
       exit(EXIT_FAILURE);
     }
 
   if (arg_njournalls != 1)
     {
-      LOG_ER("Expected 1 journal name pattern, but found %d\n", arg_njournalls);
+      LOG_ER(log, "Expected 1 journal name pattern, but found %d\n", arg_njournalls);
       exit(EXIT_FAILURE);
     }
 
   /* Create journal object. */
-  if (journal_factory(&jrn, arg_journalls[0]) < 0)
+  if (journal_factory(&jrn, arg_journalls[0], log) < 0)
     {
-      LOG_ER("Failed to create journal object for \"%s\".\n", arg_journalls[0]);
+      LOG_ER(log, "Failed to create journal object for \"%s\".\n", arg_journalls[0]);
       exit(EXIT_FAILURE);
     }
 
-  serial_open_journal();
+  serial_open_journal(log);
 
   emitter = lwes_emitter_create( (LWES_CONST_SHORT_STRING) arg_ip,
                                  (LWES_CONST_SHORT_STRING) NULL, //arg_interface,
                                  (LWES_U_INT_32) arg_port, 0, 60 );
 }
 
-static void serial_open_journal(void)
+static void serial_open_journal(FILE *log)
 {
-  if (jrn.vtbl->open(&jrn, O_WRONLY) < 0)
+  if (jrn.vtbl->open(&jrn, O_WRONLY, log) < 0)
     {
-      LOG_ER("Failed to open the journal \"%s\".\n", arg_journalls[0]);
+      LOG_ER(log, "Failed to open the journal \"%s\".\n", arg_journalls[0]);
       exit(EXIT_FAILURE);
     }
 }
 
-static void serial_close_journal(int is_rotate_event)
+static void serial_close_journal(int is_rotate_event, FILE *log)
 {
   if (gbl_done || gbl_rotate_enqueue || is_rotate_event)
     {
-      enqueuer_stats_rotate(&est);
+      enqueuer_stats_rotate(&est, log);
       if (!gbl_done)
         {
-          enqueuer_stats_flush();
+          enqueuer_stats_flush (&est);
         }
-      __sync_bool_compare_and_swap(&gbl_rotate_enqueue,1,0);
+      CAS_OFF(gbl_rotate_enqueue);
     }
 
   if (gbl_done || gbl_rotate_dequeue || is_rotate_event)
     {
-      dequeuer_stats_rotate(&dst);
+      dequeuer_stats_rotate (&dst, log);
       if (!gbl_done)
         {
-          dequeuer_stats_flush();
+          dequeuer_stats_flush (&dst);
         }
-      __sync_bool_compare_and_swap(&gbl_rotate_dequeue,1,0);
+      CAS_OFF(gbl_rotate_dequeue);
     }
 
-  if (jrn.vtbl->close(&jrn) < 0) {
-    LOG_ER("Can't close journal  \"%s\".\n", arg_journalls[0]);
+  if (jrn.vtbl->close(&jrn, log) < 0) {
+    LOG_ER(log, "Can't close journal  \"%s\".\n", arg_journalls[0]);
     exit(EXIT_FAILURE);
   }
 }
 
-static void serial_rotate(int is_rotate_event)
+static void serial_rotate(int is_rotate_event, FILE *log)
 {
-  serial_close_journal(is_rotate_event);
-  serial_open_journal();
+  serial_close_journal(is_rotate_event, log);
+  serial_open_journal(log);
 }
 
 static int serial_read(void)
@@ -160,7 +162,7 @@ static int serial_read(void)
 
   if (xpt_read_ret >= 0)
     {
-      tm     = time_in_milliseconds();
+      tm     = millis_now ();
       buflen = xpt_read_ret + HEADER_LENGTH;
       enqueuer_stats_record_datagram(&est, buflen);
       header_add(buf, xpt_read_ret, tm, addr, port);
@@ -200,7 +202,7 @@ static int serial_handle_depth_test()
                                          0, &event_tmp);
       if (bytes_read != buflen-HEADER_LENGTH)
         {
-          LOG_ER("Only able to read %d bytes; expected %d\n", bytes_read, buflen);
+          LOG_ER(NULL, "Only able to read %d bytes; expected %d\n", bytes_read, buflen);
         }
       else
         {
@@ -209,7 +211,7 @@ static int serial_handle_depth_test()
           lwes_event_get_U_INT_64(event, "count", &previous_count);
           /* determine the difference and remove one for this special event */
           pending  = count - previous_count - 1;
-          LOG_INF("Depth test reports a buffer length of %lld events.\n", pending);
+          LOG_INF(NULL, "Depth test reports a buffer length of %lld events.\n", pending);
         }
 
       lwes_event_destroy(event);
@@ -233,7 +235,7 @@ static void serial_send_buffer_depth_test(void)
   if (event == NULL) return;
   if (lwes_event_set_U_INT_64(event,"count",count) < 0)
     {
-      LOG_ER("Unable to add count to depth event");
+      LOG_ER(NULL, "Unable to add count to depth event");
     }
   else
     {
@@ -241,7 +243,7 @@ static void serial_send_buffer_depth_test(void)
     }
   lwes_event_destroy(event);
 
-  depth_tm = time_in_milliseconds();
+  depth_tm = millis_now ();
 }
 
 static void serial_write(void)
@@ -251,7 +253,7 @@ static void serial_write(void)
 
   if (jrn_write_ret != buflen)
     {
-      LOG_ER("Journal write error -- attempted to write %d bytes, "
+      LOG_ER(NULL, "Journal write error -- attempted to write %d bytes, "
              "write returned %d.\n", buflen, jrn_write_ret);
       dequeuer_stats_record_loss(&dst);
     }
@@ -259,19 +261,19 @@ static void serial_write(void)
   dequeuer_stats_record(&dst, buflen, pending);
 }
 
-static void serial_dtor(void)
+static void serial_dtor(FILE *log)
 {
-  serial_close_journal(0);
+  serial_close_journal(0, log);
   lwes_emitter_destroy(emitter);
   xpt.vtbl->destructor(&xpt);
-  jrn.vtbl->destructor(&jrn);
+  jrn.vtbl->destructor(&jrn, log);
   enqueuer_stats_dtor(&est);
   dequeuer_stats_dtor(&dst);
 }
 
-void serial_model(void)
+void serial_model(FILE *log)
 {
-  serial_ctor();
+  serial_ctor(log);
 
   do {
     int is_rotate_event = 0;
@@ -292,13 +294,16 @@ void serial_model(void)
       is_rotate_event = 1;
     }
     if (is_rotate_event || gbl_rotate_dequeue || gbl_rotate_enqueue) {
-      serial_rotate(is_rotate_event);
+      serial_rotate(is_rotate_event, log);
       is_rotate_event = 0;
+    }
+    if (gbl_rotate_main_log) {
+      log = get_log (log);
     }
     /* maybe send depth test */
     if (tm >= depth_tm + depth_dtm) serial_send_buffer_depth_test();
   }
   while (!gbl_done);
 
-  serial_dtor();
+  serial_dtor (log);
 }

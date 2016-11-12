@@ -14,6 +14,6 @@
 #ifndef JOURNAL_FILE_DOT_H
 #define JOURNAL_FILE_DOT_H
 
-int journal_file_ctor(struct journal* this_journal, const char* path);
+int journal_file_ctor(struct journal* this_journal, const char* path, FILE *log);
 
 #endif /* JOURNAL_FILE_DOT_H */

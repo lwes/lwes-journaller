@@ -14,8 +14,9 @@
 #ifndef RENAME_JOURNAL_DOT_H
 #define RENAME_JOURNAL_DOT_H
 
+#include <stdio.h>
 #include <time.h>
 
-int rename_journal (const char* path, time_t* last_rotate);
+int rename_journal (const char* path, time_t* last_rotate, FILE *log);
 
 #endif /* RENAME_JOURNAL_DOT_H */

@@ -15,8 +15,17 @@
 #define QUEUE_DOT_H
 
 #include <stddef.h>
+#include <stdio.h>
 
-#define QUEUE_INTR -2
+#define QUEUE_OK 0
+#define QUEUE_ERROR -1
+#define QUEUE_MEM_ERROR -2
+#define QUEUE_CLOSED_ERROR -3
+#define QUEUE_PERMISSION_ERROR -4
+#define QUEUE_READ_ERROR -5
+#define QUEUE_WRITE_ERROR -6
+
+#define QUEUE_INTR -8
 
 /* Queue methods:
  *
@@ -56,7 +65,7 @@ struct queue {
   void*              priv;
 };
 
-int queue_factory(struct queue* this_queue);
+int queue_factory(struct queue* this_queue, FILE *log);
 typedef int (*lwes_journaller_queue_init_t)(struct queue*, const char*, size_t, size_t) ;
 
 #endif /* QUEUE_DOT_H */

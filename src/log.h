@@ -17,6 +17,7 @@
 #include "config.h"
 
 #include <stdarg.h>
+#include <stdio.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -38,6 +39,9 @@ typedef enum {
  *  \brief Functions for logging within the journaller
  */
 
+FILE* get_log (FILE *old);
+void close_log (FILE *log);
+
 /*! \brief Logs a message
  *
  *  This method is not usually called directly, instead one of the
@@ -49,7 +53,7 @@ typedef enum {
  *  \param[in] lineno the line number of the file logging this message
  *  \param[in] format the format of the message
  */ 
-void log_msg(log_level_t level, const char *fname, int lineno, const char* format, ...);
+void log_msg(log_level_t level, const char *fname, int lineno, FILE *log, const char* format, ...);
 void log_get_mask_string(char* str, int len);
 
 #if defined(HAVE_GCC_MACRO_VARARGS) || defined(HAVE_GNUC_C_VARARGS)

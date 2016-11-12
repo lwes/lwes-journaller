@@ -24,31 +24,34 @@
 #include "opt.h"
 #include "sig.h"
 
-static FILE* log = NULL;
-
-static FILE* get_log()
+FILE* get_log (FILE *old)
 {
   /* if no log file was specified, log to stdout. */
   /* note that this means /dev/null unless --nodaemonize is set */
-  if (arg_log_file==NULL) return stdout;
+  FILE *tlog = NULL;
+  if (arg_log_file != NULL)
+    {
+      if (old)
+        {
+          tlog = freopen (arg_log_file, "a+", old);
+        }
+      else
+        {
+          tlog = fopen(arg_log_file, "a+");
+        }
 
-  /* if a log file rotation has been requested, close the current handle. */
-  /* it is probably the case that logrotate(8) has moved it to another name. */
-  if (gbl_rotate_log && log)
-  {
-    fclose(log);
-    log = NULL;
-    __sync_bool_compare_and_swap(&gbl_rotate_log,1,0);
-  }
-
-  /* if we have no log open now, open one. */
-  if (log==NULL)
-  {
-    log = fopen(arg_log_file,"a+");
-  }
+    }
 
   /* if we still have no log open, use stdout. */
-  return log==NULL ? stdout : log;
+  return tlog == NULL ? stdout : tlog;
+}
+
+void close_log (FILE *log)
+{
+  if (log)
+    {
+      fclose(log);
+    }
 }
 
 static int is_logging(log_level_t level)
@@ -75,13 +78,15 @@ static const char* log_get_level_string(int level)
   }
 }
 
-void log_msg(log_level_t level, const char* fname, int lineno, const char* format, ...)
+void log_msg(log_level_t level, const char* fname, int lineno, FILE * log, const char* format, ...)
 {
   char buf[1024];
   va_list ap;
-  FILE* log;
   char timestr[100];
   time_t t;
+
+  FILE *tlog = NULL;
+  tlog = log == NULL ? stdout : log;
 
   /* check for illegal logging level */
   if(level <= 0 || level > LOG_PROGRESS)
@@ -102,9 +107,9 @@ void log_msg(log_level_t level, const char* fname, int lineno, const char* forma
   {
     strncpy(timestr, "TIME ERROR", sizeof(timestr)-1);
   }
-  log = get_log();
-  fprintf(log, "%s %s %s:%d : %s", timestr, log_get_level_string(level), fname, lineno, buf);
-  fflush(log);
+  fprintf(tlog, "%s %s %s:%d : %s",
+          timestr, log_get_level_string(level), fname, lineno, buf);
+  fflush(tlog);
 }
 
 static void log_append_masked_level(char* str, int len, int level)

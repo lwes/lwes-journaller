@@ -14,6 +14,8 @@
 #ifndef SERIAL_DOT_H
 #define SERIAL_DOT_H
 
-void serial_model (void);
+#include <stdio.h>
+
+void serial_model (FILE *log);
 
 #endif /* SERIAL_DOT_H */

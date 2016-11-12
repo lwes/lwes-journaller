@@ -20,6 +20,6 @@
 
 #include "log.h"
 
-#define PERROR(msg) LOG_ER("%s: %s\n", msg, strerror(errno))
+#define PERROR(log, msg) LOG_ER(log,"%s: %s\n", msg, strerror(errno))
 
 #endif /* PERROR_DOT_H */

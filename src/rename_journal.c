@@ -27,7 +27,7 @@
 #include <time.h>
 #include <unistd.h>
 
-int rename_journal(const char* path, time_t* last_rotate)
+int rename_journal(const char* path, time_t* last_rotate, FILE *log)
 {
   char empty[1] = "";
   char* ext;
@@ -40,7 +40,7 @@ int rename_journal(const char* path, time_t* last_rotate)
   if ( strftime(timebfr, sizeof(timebfr), "%Y%m%d%H%M%S",
                 localtime_r(&now, &tm_now)) == 0 )
     {
-      LOG_ER("strftime failed in rename_journal(\"%s\", ...)\n", path);
+      LOG_ER(log, "strftime failed in rename_journal(\"%s\", ...)\n", path);
       return -1;
     }
 
@@ -59,12 +59,12 @@ int rename_journal(const char* path, time_t* last_rotate)
            base, timebfr, *last_rotate, now, ext);
   *last_rotate = now;
 
-  LOG_INF("Naming new journal file \"%s\".\n", newpath);
+  LOG_INF(log, "Naming new journal file \"%s\".\n", newpath);
 
   if ( rename(path, newpath) < 0 )
     {
       char buf[100] ;
-      LOG_ER("rename: %s: - '%s' -> '%s'\n",
+      LOG_ER(log,"rename: %s: - '%s' -> '%s'\n",
              strerror_r(errno,buf,sizeof(buf)), path, newpath);
       return -1;
     }
@@ -72,7 +72,7 @@ int rename_journal(const char* path, time_t* last_rotate)
   if ( chown(newpath, arg_journal_uid, -1) < 0 )
     {
       char buf[100] ;
-      LOG_ER("rename: %s: - '%s' could not be granted to uid %d\n",
+      LOG_ER(log,"rename: %s: - '%s' could not be granted to uid %d\n",
              strerror_r(errno,buf,sizeof(buf)), newpath, arg_journal_uid);
       return -1;
     }

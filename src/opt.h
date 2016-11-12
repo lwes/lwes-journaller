@@ -14,6 +14,8 @@
 #ifndef OPT_DOT_H
 #define OPT_DOT_H
 
+#include <stdio.h>
+
 extern int            arg_args;
 extern char*          arg_basename;
 extern const char*    arg_interface;
@@ -69,7 +71,7 @@ extern const char*    arg_mondemand_program_id;
 
 #define WAKEUP_MS   100
 
-void process_options(int argc, const char* argv[]);
+int process_options(int argc, const char* argv[], FILE *log);
 void options_destructor (void);
 
 #endif /* OPT_DOT_H */

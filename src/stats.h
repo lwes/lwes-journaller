@@ -14,6 +14,7 @@
 #ifndef STATS_DOT_H
 #define STATS_DOT_H
 
+#include <stdio.h>
 #include <time.h>
 #include "header.h"
 
@@ -38,6 +39,9 @@ struct enqueuer_stats {
 
   time_t start_time;
   time_t last_rotate;
+#ifdef HAVE_MONDEMAND
+  struct mondemand_client *client;
+#endif
 };
 
 struct dequeuer_stats {
@@ -67,26 +71,26 @@ struct dequeuer_stats {
 
   char latest_rotate_header[HEADER_LENGTH] ; /* Of the Command::Rotate that was acted on */
   lj_rotation_t rotation_type;
+#ifdef HAVE_MONDEMAND
+  struct mondemand_client *client;
+#endif
 };
 
-unsigned long long time_in_milliseconds (void);
+int enqueuer_stats_ctor (struct enqueuer_stats* stats);
+void enqueuer_stats_dtor (struct enqueuer_stats* stats);
+void enqueuer_stats_record_socket_error (struct enqueuer_stats* stats);
+void enqueuer_stats_record_datagram (struct enqueuer_stats* stats, int bytes);
+void enqueuer_stats_erase_datagram (struct enqueuer_stats* stats, int bytes);
+void enqueuer_stats_rotate (struct enqueuer_stats* st, FILE *log);
+void enqueuer_stats_report (struct enqueuer_stats* stats, FILE *log);
+void enqueuer_stats_flush (struct enqueuer_stats* stats);
 
-int enqueuer_stats_ctor (struct enqueuer_stats* this_stats);
-void stats_enqueuer_rotate (struct enqueuer_stats* this_stats);
-void enqueuer_stats_record_socket_error (struct enqueuer_stats* this_stats);
-void enqueuer_stats_record_datagram (struct enqueuer_stats* this_stats, int bytes);
-void enqueuer_stats_erase_datagram (struct enqueuer_stats* this_stats, int bytes);
-void enqueuer_stats_rotate (struct enqueuer_stats* this_stats);
-void enqueuer_stats_report (struct enqueuer_stats* this_stats);
-void enqueuer_stats_flush (void);
-void enqueuer_stats_dtor (struct enqueuer_stats* this_stats);
-
-int dequeuer_stats_ctor (struct dequeuer_stats* this_stats);
-void dequeuer_stats_record (struct dequeuer_stats* this_stats, int bytes, int pending);
-void dequeuer_stats_record_loss (struct dequeuer_stats* this_stats);
-void dequeuer_stats_rotate (struct dequeuer_stats* this_stats);
-void dequeuer_stats_report (struct dequeuer_stats* this_stats);
-void dequeuer_stats_flush (void);
-void dequeuer_stats_dtor (struct dequeuer_stats* this_stats);
+int dequeuer_stats_ctor (struct dequeuer_stats* stats);
+void dequeuer_stats_record (struct dequeuer_stats* stats, int bytes, int pending);
+void dequeuer_stats_record_loss (struct dequeuer_stats* stats);
+void dequeuer_stats_rotate (struct dequeuer_stats* stats, FILE *log);
+void dequeuer_stats_report (struct dequeuer_stats* stats, FILE *log);
+void dequeuer_stats_flush (struct dequeuer_stats* stats);
+void dequeuer_stats_dtor (struct dequeuer_stats* stats);
 
 #endif /* STATS_DOT_H */

@@ -40,11 +40,11 @@ struct priv {
   long long nbytes_written;
 };
 
-static void destructor(struct journal* this_journal)
+static void destructor(struct journal* this_journal, FILE *log)
 {
   struct priv* ppriv;
 
-  this_journal->vtbl->close(this_journal);
+  this_journal->vtbl->close(this_journal, log);
 
   ppriv = (struct priv*)this_journal->priv;
 
@@ -55,7 +55,7 @@ static void destructor(struct journal* this_journal)
   this_journal->priv = 0;
 }
 
-static int xopen(struct journal* this_journal, int flags)
+static int xopen(struct journal* this_journal, int flags, FILE *log)
 {
   struct priv* ppriv = (struct priv*)this_journal->priv;
   const char* mode;
@@ -78,7 +78,7 @@ static int xopen(struct journal* this_journal, int flags)
         mode = "wb";
         if ( 0 == stat(ppriv->path, &buf) )
           {
-            rename_journal(ppriv->path, &epoch);
+            rename_journal(ppriv->path, &epoch, log);
           }
         break;
 
@@ -104,7 +104,7 @@ static int xopen(struct journal* this_journal, int flags)
 
       if ( -1 == statvfs(ppriv->path, &stfsbuf) )
         {
-          LOG_WARN("Unable to determine free space available for %s.\n",
+          LOG_WARN(log,"Unable to determine free space available for %s.\n",
                    ppriv->path);
         }
       else
@@ -116,9 +116,9 @@ static int xopen(struct journal* this_journal, int flags)
 
           if ( lsz > (stfsbuf.f_bavail / 2.) )
             {
-              LOG_WARN("Low on disk space for new log %s.\n", ppriv->path);
-              LOG_WARN("Available space is %d blocks of %d bytes each.\n", stfsbuf.f_bavail, bsize);
-              LOG_WARN("Last log file contained %lld bytes.\n", ppriv->nbytes_written);
+              LOG_WARN(log,"Low on disk space for new log %s.\n", ppriv->path);
+              LOG_WARN(log,"Available space is %d blocks of %d bytes each.\n", stfsbuf.f_bavail, bsize);
+              LOG_WARN(log,"Last log file contained %lld bytes.\n", ppriv->nbytes_written);
             }
         }
     }
@@ -130,7 +130,7 @@ static int xopen(struct journal* this_journal, int flags)
   return 0;
 }
 
-static int xclose(struct journal* this_journal)
+static int xclose(struct journal* this_journal, FILE *log)
 {
   struct priv* ppriv = (struct priv*)this_journal->priv;
 
@@ -145,7 +145,7 @@ static int xclose(struct journal* this_journal)
       return -1;
     }
 
-  rename_journal(ppriv->path, &ppriv->ot);
+  rename_journal(ppriv->path, &ppriv->ot, log);
   ppriv->fp = 0;
   return 0;
 }
@@ -165,7 +165,7 @@ static int xwrite(struct journal* this_journal, void* ptr, size_t size)
   return (int)ret * size;
 }
 
-int journal_file_ctor(struct journal* this_journal, const char* path)
+int journal_file_ctor(struct journal* this_journal, const char* path, FILE *log)
 {
   static struct journal_vtbl vtbl = {
     destructor,
@@ -181,7 +181,7 @@ int journal_file_ctor(struct journal* this_journal, const char* path)
   ppriv = (struct priv*)malloc(sizeof(struct priv));
   if ( 0 == ppriv )
     {
-      LOG_ER("Failed to allocate %d bytes for journal data.\n",
+      LOG_ER(log,"Failed to allocate %d bytes for journal data.\n",
           sizeof(*ppriv));
       return -1;
     }

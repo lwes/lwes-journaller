@@ -23,18 +23,32 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int main(int argc, const char* argv[])
+int
+main(int argc, const char* argv[])
 {
   int xpt_write_ret;
   struct xport xpt;
   const char rotate_event[] = ROTATE_COMMAND "\0";
 
-  process_options(argc, argv);
+  FILE *log = get_log (NULL);
+
+  switch (process_options(argc, argv, log))
+    {
+      case 0:
+        break;
+      case -1:
+        exit(EXIT_SUCCESS);
+      default:
+        exit(EXIT_FAILURE);
+    }
+
   arg_ttl = 3 ; /* Command::Rotate should not be any other ... */
 
-  if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
+  if ( (xport_factory(&xpt, log) < 0)
+       || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
     {
-      LOG_ER("Failed to create xport object.\n");
+      LOG_ER(log, "Failed to create xport object.\n");
+      close_log (log);
       exit(EXIT_FAILURE);
     }
 
@@ -42,12 +56,15 @@ int main(int argc, const char* argv[])
                                         rotate_event,
                                         sizeof(rotate_event))) < 0 )
     {
-      LOG_ER("Xport Command::Rotate write error.");
+      LOG_ER(log,"Xport Command::Rotate write error.");
       xpt.vtbl->destructor(&xpt);
+      close_log (log);
       exit(EXIT_FAILURE);
     }
 
   xpt.vtbl->destructor(&xpt);
+
+  close_log (log);
 
   return 0;
 }

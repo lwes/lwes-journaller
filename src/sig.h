@@ -15,14 +15,21 @@
 #define SIG_DOT_H
 
 #include <signal.h>
+#include <stdio.h>
 
 extern volatile sig_atomic_t gbl_done;
 extern volatile sig_atomic_t gbl_rotate_enqueue;
 extern volatile sig_atomic_t gbl_rotate_dequeue;
-extern volatile sig_atomic_t gbl_rotate_log;
+extern volatile sig_atomic_t gbl_rotate_main_log;
+extern volatile sig_atomic_t gbl_rotate_enqueue_log;
+extern volatile sig_atomic_t gbl_rotate_dequeue_log;
 
-extern void install_signal_handlers (void);
-extern void install_rotate_signal_handlers (void);
-extern void install_interval_rotate_handlers (int should_install_handler);
+extern void install_termination_signal_handlers (FILE *log);
+extern void install_rotate_signal_handlers (FILE *log);
+extern void install_log_rotate_signal_handlers (FILE *log, int is_main, int sig);
+extern void install_interval_rotate_handlers (FILE *log, int should_install_handler);
+
+#define CAS_ON(var) __sync_bool_compare_and_swap(&var,0,1);
+#define CAS_OFF(var) __sync_bool_compare_and_swap(&var,1,0);
 
 #endif /* SIG_DOT_H */

@@ -24,27 +24,27 @@
 #include <string.h>
 #include <stdlib.h>
 
-int journal_factory(struct journal* jrn, const char* name)
+int journal_factory(struct journal* jrn, const char* name, FILE *log)
 {
   if ( strcmp(arg_journ_type, ARG_FILE) == 0 )
     {
-      if ( journal_file_ctor(jrn, name) < 0 )
+      if ( journal_file_ctor(jrn, name, log) < 0 )
         {
-          LOG_ER("Failed to create a plain file journal.\n");
+          LOG_ER(log,"Failed to create a plain file journal.\n");
           return -1;
         }
     }
   else if ( strcmp(arg_journ_type, ARG_GZ) == 0 )
     {
-      if ( journal_gz_ctor(jrn, name) < 0 )
+      if ( journal_gz_ctor(jrn, name, log) < 0 )
         {
-          LOG_ER("Failed to create a GZ compressed journal.\n");
+          LOG_ER(log,"Failed to create a GZ compressed journal.\n");
           return -1;
         }
     }
   else
     {
-      LOG_ER("Unrecognized journal type \"%s\", try \""
+      LOG_ER(log,"Unrecognized journal type \"%s\", try \""
              ARG_FILE "\" or \"" ARG_GZ "\".\n",
              arg_journ_type);
       return -1;

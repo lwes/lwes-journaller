@@ -22,17 +22,18 @@
 #include "sig.h"
 #include "xport.h"
 #include "stats.h"
+#include "time_utils.h"
 
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-static void skd(void);
+static void skd(FILE *log);
 
 struct enqueuer_stats est ;
 
-int xport_to_queue(void)
+int xport_to_queue(FILE *log)
 {
   struct xport xpt;
   struct queue que;
@@ -44,27 +45,27 @@ int xport_to_queue(void)
 
   if ( arg_rt )
     {
-      skd();
+      skd(log);
     }
 
-  if ( (queue_factory(&que) < 0) || (que.vtbl->open(&que, O_WRONLY) < 0) )
+  if ( (queue_factory(&que, log) < 0) || (que.vtbl->open(&que, O_WRONLY) < 0) )
     {
-      LOG_ER("Failed to create or open queue object.\n");
+      LOG_ER(log, "Failed to create or open queue object.\n");
       exit(EXIT_FAILURE);
     }
 
   /* Can we drop root here? */
 
-  if ( (xport_factory(&xpt) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
+  if ( (xport_factory(&xpt, log) < 0) || (xpt.vtbl->open(&xpt, O_RDONLY) < 0) )
     {
-      LOG_ER("Failed to create xport object.\n");
+      LOG_ER(log, "Failed to create xport object.\n");
       exit(EXIT_FAILURE);
     }
 
   buf = (unsigned char*)que.vtbl->alloc(&que, &bufsiz);
   if ( 0 == buf )
     {
-      LOG_ER("unable to allocate %d bytes for message buffer.\n", bufsiz);
+      LOG_ER(log, "unable to allocate %d bytes for message buffer.\n", bufsiz);
       exit(EXIT_FAILURE);
     }
   memset(buf, 0, bufsiz);
@@ -88,7 +89,7 @@ int xport_to_queue(void)
                                         &addr, &port);
       if (xpt_read_ret >= 0 )
         {
-          tm = time_in_milliseconds();
+          tm = millis_now ();
           enqueuer_stats_record_datagram(&est, xpt_read_ret + HEADER_LENGTH);
           header_add(buf, xpt_read_ret, tm, addr, port);
         }
@@ -98,7 +99,7 @@ int xport_to_queue(void)
         }
       else
         {
-          LOG_INF("Received other interruption\n");
+          LOG_INF(log, "Received other interruption\n");
           enqueuer_stats_record_socket_error(&est);
           continue;
         }
@@ -106,19 +107,25 @@ int xport_to_queue(void)
       /* we are rotating or shutting down */
       if ( header_is_rotate (buf) || gbl_rotate_enqueue || gbl_done)
         {
-          enqueuer_stats_rotate(&est);
           /* if we are shutting down the destructor will flush stats,
            * so skip so we don't get duplicate events sent to mondemand
            * if it is enabled
            */
           if (! gbl_done )
             {
-              enqueuer_stats_flush();
+              enqueuer_stats_rotate(&est, log);
+              enqueuer_stats_flush (&est);
             }
           if (gbl_rotate_enqueue)
             {
-              __sync_bool_compare_and_swap(&gbl_rotate_enqueue,1,0);
+              CAS_OFF(gbl_rotate_enqueue);
             }
+        }
+
+      if (gbl_rotate_enqueue_log)
+        {
+          log = get_log (log);
+          CAS_OFF(gbl_rotate_enqueue_log);
         }
 
       if (xpt_read_ret != XPORT_INTR)
@@ -127,26 +134,25 @@ int xport_to_queue(void)
                                                 buf,
                                                 xpt_read_ret + HEADER_LENGTH)) < 0 )
             {
-              LOG_ER("Queue write error attempting to write %d bytes.\n",
+              LOG_ER(log, "Queue write error attempting to write %d bytes.\n",
                      xpt_read_ret + HEADER_LENGTH);
               continue;
             }
           else
             {
-              LOG_PROG("Queue write of %d bytes.\n",
+              LOG_PROG(log, "Queue write of %d bytes.\n",
                        xpt_read_ret + HEADER_LENGTH);
             }
         }
     }
 
-  LOG_INF("xport shutting down\n");
   que.vtbl->dealloc(&que, buf);
 
   xpt.vtbl->destructor(&xpt);
   que.vtbl->destructor(&que);
 
-  enqueuer_stats_rotate(&est);
-  enqueuer_stats_report(&est);
+  enqueuer_stats_rotate(&est, log);
+  enqueuer_stats_report(&est, log);
   enqueuer_stats_dtor(&est);
 
   return 0;
@@ -155,25 +161,25 @@ int xport_to_queue(void)
 #if HAVE_SCHED_H
 #include <sched.h>
 
-static void skd()
+static void skd(FILE *log)
 {
   struct sched_param sp;
 
   sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
   if ( sched_setscheduler(0, SCHED_FIFO, &sp) )
     {
-      PERROR("sched_setscheduler");
-      LOG_WARN("Increasing thread priority failed"
+      PERROR(log,"sched_setscheduler");
+      LOG_WARN(log, "Increasing thread priority failed"
                ", will run with standard priorities\n");
     }
   else
     {
-      LOG_INF("Running with FIFO priority\n");
+      LOG_INF(log, "Running with FIFO priority\n");
     }
 }
 #else
-static void skd()
+static void skd(FILE *log)
 {
-  LOG_WARN("No real-time scheduler support on this platform.\n");
+  LOG_WARN(log, "No real-time scheduler support on this platform.\n");
 }
 #endif

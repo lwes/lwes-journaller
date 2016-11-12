@@ -25,79 +25,117 @@
 volatile sig_atomic_t gbl_done = 0;
 volatile sig_atomic_t gbl_rotate_enqueue = 0;
 volatile sig_atomic_t gbl_rotate_dequeue = 0;
-volatile sig_atomic_t gbl_rotate_log = 0;
+volatile sig_atomic_t gbl_rotate_main_log = 0;
+volatile sig_atomic_t gbl_rotate_enqueue_log = 0;
+volatile sig_atomic_t gbl_rotate_dequeue_log = 0;
 
 static void terminate_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
-  __sync_bool_compare_and_swap(&gbl_done,0,1);
+  CAS_ON(gbl_done);
 }
 
 static void rotate_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
-  __sync_bool_compare_and_swap(&gbl_rotate_enqueue,0,1);
-  __sync_bool_compare_and_swap(&gbl_rotate_dequeue,0,1);
+  CAS_ON(gbl_rotate_enqueue);
+  CAS_ON(gbl_rotate_dequeue);
 }
 
-static void rotate_log_signal_handler(int signo)
+static void rotate_main_log_signal_handler(int signo)
 {
   (void)signo; /* appease -Wall -Werror */
-  __sync_bool_compare_and_swap(&gbl_rotate_log,0,1);
+  CAS_ON(gbl_rotate_main_log);
 }
 
-static void install(int signo, void (*handler)(int signo))
+static void rotate_enqueue_log_signal_handler (int signo)
+{
+  (void)signo; /* appease -Wall -Werror */
+  CAS_ON(gbl_rotate_enqueue_log);
+}
+
+static void rotate_dequeue_log_signal_handler (int signo)
+{
+  (void)signo; /* appease -Wall -Werror */
+  CAS_ON(gbl_rotate_dequeue_log);
+}
+
+static void install(FILE *log, int signo, void (*handler)(int signo))
 {
   struct sigaction sigact;
 
   memset(&sigact, 0, sizeof(sigact));
 
-  sigact.sa_handler = handler;
+  /* a null handler means to ignore this signal */
+  if (handler == NULL)
+    {
+      sigact.sa_handler = SIG_IGN;
+    }
+  else
+    {
+      sigact.sa_handler = handler;
+    }
 
   sigemptyset(&sigact.sa_mask);
   sigact.sa_flags = 0;
 
   if ( sigaction(signo, &sigact, NULL) < 0 )
     {
-      PERROR("sigaction");
+      PERROR(log,"sigaction");
       exit(EXIT_FAILURE);
     }
 }
 
-void install_signal_handlers()
+void install_termination_signal_handlers(FILE *log)
 {
-  struct sigaction sigact;
-
   /* Any of these signals shuts us down. */
-  LOG_PROG("Installing termination signal handlers.\n");
+  LOG_PROG(log, "Installing termination signal handlers.\n");
 
-  install(SIGINT, terminate_signal_handler);
-  install(SIGQUIT, terminate_signal_handler);
-  install(SIGTERM, terminate_signal_handler);
+  install(log, SIGINT, terminate_signal_handler);
+  install(log, SIGQUIT, terminate_signal_handler);
+  install(log, SIGTERM, terminate_signal_handler);
+  install(log, SIGPIPE, NULL);
+}
 
-  memset(&sigact, 0, sizeof(sigact));
-  sigact.sa_handler = SIG_IGN;
+void install_rotate_signal_handlers(FILE *log)
+{
+  LOG_PROG(log, "Installing rotate signal handlers.\n");
+  /* This one triggers a journal rotate. */
+  install(log, SIGHUP, rotate_signal_handler);
+}
 
-  sigemptyset(&sigact.sa_mask);
-  sigact.sa_flags = 0;
-
-  if ( sigaction(SIGPIPE, &sigact, NULL) < 0 )
+/* log rotation is strange, what's happening is that in order to work
+ * correctly with thread, process, and serial mode we need to jump
+ * through a few hoops with signal handling.
+ *
+ * In the process model the main process catches SIGUSR1 and uses
+ * that to both rotate logs and send signals to the child processes.
+ * For the child processes I use 2 different signals since they
+ * end up tied to two separate globals.  That way the same code
+ * can be used in the threaded and process models at a certain level.
+ */
+void install_log_rotate_signal_handlers(FILE *log, int is_main, int sig)
+{
+  LOG_PROG(log, "Installing rotate signal handlers using %d.\n", sig);
+  switch (sig)
     {
-      PERROR("sigaction");
-      exit(EXIT_FAILURE);
+      case SIGUSR1:
+        if (is_main) {
+          install(log, sig, rotate_main_log_signal_handler);
+        } else {
+          install(log, sig, rotate_enqueue_log_signal_handler);
+        }
+        break;
+      case SIGUSR2:
+        install(log, sig, rotate_dequeue_log_signal_handler);
+        break;
+
+      default:
+        break;
     }
 }
 
-void install_rotate_signal_handlers()
-{
-  /* This one triggers a journal rotate. */
-  install(SIGHUP, rotate_signal_handler);
-
-  /* This one triggers a log rotate. */
-  install(SIGUSR1, rotate_log_signal_handler);
-}
-
-void install_interval_rotate_handlers (int should_install_handler)
+void install_interval_rotate_handlers (FILE *log, int should_install_handler)
 {
   if (arg_journal_rotate_interval) {
     struct itimerval timer;
@@ -105,11 +143,11 @@ void install_interval_rotate_handlers (int should_install_handler)
     struct timeval next;
     if (-1 == gettimeofday (&now, 0))
       {
-        PERROR("gettimeofday");
+        PERROR(log, "gettimeofday");
       }
     if (should_install_handler != 0 )
       {
-        install(SIGALRM, rotate_signal_handler);
+        install(log, SIGALRM, rotate_signal_handler);
       }
 
     time_to_next_round_interval (now, arg_journal_rotate_interval, &next);
@@ -119,11 +157,11 @@ void install_interval_rotate_handlers (int should_install_handler)
     /* ... and every interval seconds after that. */
     timer.it_interval.tv_sec = arg_journal_rotate_interval;
     timer.it_interval.tv_usec = 0;
-    LOG_INF("rotating every %d seconds\n", arg_journal_rotate_interval);
+    LOG_INF(log, "rotating every %d seconds\n", arg_journal_rotate_interval);
     /* set an interval timer to alarm for rotation */
     if (setitimer (ITIMER_REAL, &timer, NULL) < 0)
       {
-        PERROR("setitimer");
+        PERROR(log,"setitimer");
       }
   }
 }
