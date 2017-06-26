@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/lwes/lwes-journaller.svg?branch=master)](https://travis-ci.org/lwes/lwes-journaller)
+
 # LWES Journaller
 
 ## Summary
