@@ -107,7 +107,9 @@ int    arg_args;
 #ifdef HAVE_MONDEMAND
 const char*    arg_mondemand_host = NULL;
 const char*    arg_mondemand_ip    = NULL;
+const char*    arg_mondemand_interface = NULL;
 int            arg_mondemand_port  = 20402;
+int            arg_mondemand_ttl   = 10;
 const char*    arg_mondemand_program_id = "lwes-journaller";
 #endif
 
@@ -147,7 +149,9 @@ int process_options(int argc, const char* argv[], FILE *log)
 #ifdef HAVE_MONDEMAND
     { "mondemand-host", 0, POPT_ARG_STRING, &arg_mondemand_host, 0, "Mondemand monitoring host", "string" },
     { "mondemand-ip",   0, POPT_ARG_STRING, &arg_mondemand_ip,   0, "Mondemand monitoring ip", "ip-address" },
+    { "mondemand-interface",   0, POPT_ARG_STRING, &arg_mondemand_interface,   0, "Mondemand monitoring interface to emit out of of", "ip-address" },
     { "mondemand-port", 0, POPT_ARG_INT,    &arg_mondemand_port, 0, "Mondemand monitoring port dflt=20402", "port" },
+    { "mondemand-ttl", 0, POPT_ARG_INT,    &arg_mondemand_ttl, 0, "Mondemand monitoring ttl (default is 10)", "ttl" },
     { "mondemand-program-id", 0, POPT_ARG_STRING, &arg_mondemand_program_id, 0, "Mondemand program id (default is 'lwes-journaller')", "program-id" },
 #endif
 
@@ -316,7 +320,16 @@ int process_options(int argc, const char* argv[], FILE *log)
               "  arg_site == %d\n"
               "  arg_ttl == %d\n"
               "  arg_journal_user == %s\n"
-              "  arg_journal_uid == %d\n",
+              "  arg_journal_uid == %d\n"
+#ifdef HAVE_MONDEMAND
+              "  arg_mondemand_host == %s\n"
+              "  arg_mondemand_ip == %s\n"
+              "  arg_mondemand_interface == %s\n"
+              "  arg_mondemand_port == %d\n"
+              "  arg_mondemand_ttl == %d\n"
+              "  arg_mondemand_program_id == %s\n"
+#endif
+              ,
               arg_basename,
               arg_interface,
               arg_ip,
@@ -338,7 +351,16 @@ int process_options(int argc, const char* argv[], FILE *log)
               arg_site,
               arg_ttl,
               arg_journal_user,
-              arg_journal_uid);
+              arg_journal_uid
+#ifdef HAVE_MONDEMAND
+             , arg_mondemand_host,
+               arg_mondemand_ip,
+               arg_mondemand_interface,
+               arg_mondemand_port,
+               arg_mondemand_ttl,
+               arg_mondemand_program_id
+#endif
+              );
 
       for ( arg_njournalls=0; arg_journalls[arg_njournalls]; ++arg_njournalls )
         {

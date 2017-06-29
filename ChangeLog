@@ -1,3 +1,8 @@
+Version 1.1.0 (anthonym)
+* added command line arguments to specify the mondemand ttl and interface.
+Both are optional
+* the new default ttl for mondemand is 10 instead of 3
+
 Version 1.0.3 (anthonym)
 * refactor logging to work better with threads and hopefully no longer cause
 core dumps randomly when rotating logs in threaded mode

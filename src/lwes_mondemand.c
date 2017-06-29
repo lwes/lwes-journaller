@@ -37,11 +37,15 @@ create_client (void)
   if (arg_mondemand_host != NULL && arg_mondemand_ip != NULL)
     {
       struct mondemand_transport *transport = NULL;
-      client = mondemand_client_create(arg_mondemand_program_id);
-      mondemand_set_context(client,"host",arg_mondemand_host);
+      client = mondemand_client_create (arg_mondemand_program_id);
+      mondemand_set_context (client, "host", arg_mondemand_host);
       transport =
-        mondemand_transport_lwes_create( arg_mondemand_ip,
-                                         arg_mondemand_port,NULL,0,0);
+        mondemand_transport_lwes_create_with_ttl ( arg_mondemand_ip,
+                                                   arg_mondemand_port,
+                                                   arg_mondemand_interface,
+                                                   0,
+                                                   0,
+                                                   arg_mondemand_ttl);
       if (transport)
         {
           mondemand_add_transport (client, transport);

@@ -49,7 +49,9 @@ extern int            arg_wakeup_interval_ms;
 #ifdef HAVE_MONDEMAND
 extern const char*    arg_mondemand_host;
 extern const char*    arg_mondemand_ip;
+extern const char*    arg_mondemand_interface;
 extern int            arg_mondemand_port;
+extern int            arg_mondemand_ttl;
 extern const char*    arg_mondemand_program_id;
 #endif
 

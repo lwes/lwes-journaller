@@ -68,6 +68,7 @@ sudo $cmd \
   --mondemand-host=centos65.local \
   --mondemand-ip=127.0.0.1 \
   --mondemand-port=20402 \
+  --mondemand-ttl=10 \
   --journal-rotate-interval 60 \
   --real-time \
   $other \
