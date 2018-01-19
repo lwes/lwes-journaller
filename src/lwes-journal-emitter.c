@@ -427,7 +427,7 @@ int main(int argc, char **argv)
       ret = 0;
     }
   stop = currentTimeMillisLongLong ();
-  fprintf (stderr, "emitted %d events in %lld milliseconds\n",
+  fprintf (stderr, "emitted %d events in %ld milliseconds\n",
            total_count, (stop - start));
 cleanup:
   if (emitter != NULL)

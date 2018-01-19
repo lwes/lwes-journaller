@@ -1,3 +1,6 @@
+Version 1.1.1 (anthonym)
+* fix for gcc 6.x compilation error
+
 Version 1.1.0 (anthonym)
 * added command line arguments to specify the mondemand ttl and interface.
 Both are optional

@@ -8,7 +8,7 @@ srcdir="$depdir/source"
 mkdir -p $srcdir
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$depdir/lib/pkgconfig
 
-LWES_VERSION=1.0.0
+LWES_VERSION=1.1.1
 MONDEMAND_VERSION=4.4.2
 
 # install lwes
